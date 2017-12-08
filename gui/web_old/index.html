@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Peerster Client</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+
+  <div id="wrapper">
+
+    <div id="chat_box">
+      <h5>Messages</h5>
+
+      <div class="scroll" id="messages_container">
+        <ul id="message-list">
+          <!-- Messages are displayed here -->
+        </ul>
+      </div>
+
+      <input name="user_msg" type="text" id="user_msg" />
+      <br />
+      <button id="submitmsg" type="button" onclick="sendMessage()">Send</button>
+      <hr />
+    </div>
+
+    <div id="node_box">
+      <h5>Peers</h5>
+
+      <div class="scroll" id="nodes_container">
+        <ul id="node-list">
+          <!-- Nodes are displayed here -->
+        </ul>
+      </div>
+
+      <input name="new_node" type="text" id="new_node" />
+      <button type="button" id="addnode" onclick="addNode()">Add Node</button>
+      <hr />
+    </div>
+
+    <div id="id_box">
+      <h5>Name</h5>
+      <input name="peer_name" type="text" id="peer_name" placeholder="" />
+      <br />
+      <button type="button" id="change_name" onclick="changeName()">Change Name</button>
+      <hr />
+    </div>
+
+    <div id="private_box">
+      <h5>Private Messages</h5>
+
+
+      <div class="scroll" id="privatemessages_container">
+        <ul id="privatemessage-list">
+          <!-- Private Messages are displayed here -->
+        </ul>
+      </div>
+
+      <span id="reachable-nodes-container">
+        <select id="reachable-nodes-select">
+           </select>
+      </span>
+
+      <button type="button" id="newPM" onclick="newPM()">New PM</button>
+
+      <span id="pm-text-div" style="display: none;">
+        <input name="user_private_msg" type="text" id="user_private_msg" />
+        <button id="submitpm" type="button" onclick="sendPM()">Send</button>
+      </span>
+      <hr />
+
+    </div>
+
+    <div id="file_box">
+      <h5>Submit File</h5>
+      <input name="file" type="file" id="file" placeholder="" />
+      <br />
+      <button type="button" id="submit_file" onclick="submitFile()">Submit File</button>
+      <hr />
+
+      <h5>Download File</h5>
+      <input name="filename" type="text" id="dl_filename" placeholder="filename" />
+      <input name="hash" type="text" id="filehash" placeholder="hex hash" />
+      <br/>
+
+      <div id="reachable-nodes-container2">
+        <select id="reachable-nodes-select2">
+           </select>
+       <button type="button" id="download_file" onclick="downloadFile()">Download</button>
+      </div>
+
+    </br/>
+      <hr />
+    </div>
+
+  </div>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+
+</body>
+
+</html>

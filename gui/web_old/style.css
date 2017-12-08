@@ -1,0 +1,60 @@
+#wrapper {
+  width: 70%;
+  margin: auto;
+  text-align: center;
+}
+
+input {
+  width: 90%%;
+}
+
+#chat_box {
+  width: 70%;
+  float: left;
+}
+
+#node_box {
+  width: 20%;
+  float: right;
+}
+
+#id_box {
+  width: 20%;
+  float: right;
+}
+
+#file_box {
+  width: 20%;
+  float: right;
+}
+
+#private_box {
+  width: 70%;
+  float: left;
+}
+
+ul {
+  list-style-type: none;
+}
+
+ul>li {
+  text-align: left;
+}
+
+.scroll {
+  height: 300px;
+  overflow-y: scroll;
+}
+
+.sender_name {
+  color: grey;
+  font-weight: 600;
+}
+
+.message_text:before {
+  content: "> \00a0 ";
+}
+
+.message_text {
+  font-weight: 500;
+}
