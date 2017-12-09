@@ -28,11 +28,11 @@ var privateMessages []common.NewPrivateMessage
 var ids []string
 
 type WebMessage struct {
-	message     string
-	destination string
-	filename    string
-	hexhash     string
-	node        string
+	Message     string
+	Destination string
+	Filename    string
+	Hexhash     string
+	Node        string
 }
 
 func parse(req *http.Request) *WebMessage {
@@ -94,10 +94,12 @@ func main() {
 	r.HandleFunc("/", mainHandler)
 	r.HandleFunc("/script.js", jsHandler)
 	r.HandleFunc("/style.css", cssHandler)
+
 	r.HandleFunc("/message", sendMessageHandler).Methods("POST")               // client send message
 	r.HandleFunc("/node", addNodeHandler).Methods("POST")                      // client add node
 	r.HandleFunc("/file", newFileHandler).Methods("POST")                      // client adds a file
 	r.HandleFunc("/download", downloadFileHandler).Methods("POST")             // client request to download a file
+
 	r.HandleFunc("/message", getMessagesHandler).Methods("GET")                // request new messages
 	r.HandleFunc("/private-message", getPrivateMessagesHandler).Methods("GET") // request new private messages
 	r.HandleFunc("/node", getNodesHandler).Methods("GET")                      // request update on nodes
@@ -105,7 +107,7 @@ func main() {
 
 	http.Handle("/", r)
 
-	http.ListenAndServe(":"+fmt.Sprintf("%d", *port), nil)
+	http.ListenAndServe(":"+fmt.Sprintf("%d", *port), r)
 }
 
 func requester() {
@@ -202,7 +204,7 @@ func newFileHandler(w http.ResponseWriter, r *http.Request) {
 	if webm == nil {
 		return
 	}
-	filename := webm.filename
+	filename := webm.Filename
 	fmt.Println("*** file : ", filename)
 
 	outputQueue <- &common.ClientPacket{
@@ -216,9 +218,9 @@ func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hexhash := webm.hexhash
-	destination := webm.destination
-	filename := webm.filename
+	hexhash := webm.Hexhash
+	destination := webm.Destination
+	filename := webm.Filename
 	fmt.Println("*** Requesting file :", filename, hexhash)
 	// hex -> []byte
 	metahash, err := hex.DecodeString(hexhash)
@@ -242,7 +244,7 @@ func addNodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	node := webm.node
+	node := webm.Node
 
 	fmt.Println("Received add node request : ", node)
 
@@ -263,13 +265,15 @@ func addNodeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Body)
 	webm := parse(r)
+	fmt.Println(webm)
 	if webm == nil {
 		return
 	}
 
-	msgText := webm.message
-	dest := webm.destination
+	msgText := webm.Message
+	dest := webm.Destination
 
 	if dest != "" {
 		// private message
