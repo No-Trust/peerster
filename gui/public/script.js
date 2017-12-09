@@ -222,7 +222,7 @@ function updateChat() {
 
         if (!(origin in messages)) {
             // TODO: Add something to the GUI in this case
-            console.log('No messages with ' + origin);
+            console.log(`No messages with ${origin}`);
             return;
         }
 
@@ -265,16 +265,49 @@ function switchToTextMode() {
     GETters
 */
 
-function getMessages() {
+function getRumors() {
 
-    fetch('http://' + SERVER_ADDRESS + ':' + SERVER_PORT + '/message')
+    fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/message`)
         .then(response => response.json())
         .then(data => {
 
-            myNames.push(data.Name);
+            // myNames.push(data.Name);
 
-            rumors = data.Rumors;
-            messages = data.Messages;
+            // rumors = data;
+            data.forEach(message => {
+
+                if (!(message.SenderName in rumors)) {
+                    rumors.SenderName = [];
+                }
+
+                rumors.SenderName.push(message);
+
+            });
+
+            updateChat();
+
+        }).catch(console.error);
+
+}
+
+function getMessages() {
+
+    fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/private-message`)
+        .then(response => response.json())
+        .then(data => {
+
+            // myNames.push(data.Name);
+
+            // messages = data;
+            data.forEach(message => {
+
+                if (!(message.Origin in messages)) {
+                    messages.Origin = [];
+                }
+
+                messages.Origin.push(message);
+
+            });
 
             updateChat();
 
@@ -284,7 +317,7 @@ function getMessages() {
 
 function getPeers() {
 
-    fetch('http://' + SERVER_ADDRESS + ':' + SERVER_PORT + '/node')
+    fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/node`)
         .then(response => response.json())
         .then(data => data.forEach(peer => {
 
@@ -301,7 +334,7 @@ function getPeers() {
 
 function getOrigins() {
 
-    fetch('http://' + SERVER_ADDRESS + ':' + SERVER_PORT + '/origins')
+    fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/reachable-node`)
         .then(response => response.json())
         .then(data => data.forEach(origin => {
 
@@ -328,7 +361,7 @@ function postMessage() {
     MESSAGE_INPUT.value = '';
 
     if (message !== '') {
-        fetch('http://' + SERVER_ADDRESS + ':' + SERVER_PORT + '/message', {
+        fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/message`, {
             method : 'POST',
             body   : JSON.stringify({
                 "message"     : message,
@@ -344,7 +377,7 @@ function postFile() {
     let filename = FILE_INPUT.files[0].name;
 
     if (filename !== '') {
-        fetch('http://' + SERVER_ADDRESS + ':' + SERVER_PORT + '/file', {
+        fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/file`, {
             method : 'POST',
             body   : JSON.stringify({
                 "filename" : filename
@@ -361,7 +394,7 @@ function postPeer() {
     LEFT_PANE_INPUT.value = '';
 
     if (peer !== '') {
-        fetch('http://' + SERVER_ADDRESS + ':' + SERVER_PORT + '/node', {
+        fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/node`, {
             method : 'POST',
             body   : JSON.stringify({
                 "node" : peer
@@ -474,8 +507,9 @@ chats.forEach(origin => {
 
 activateChat(RUMOR_CHAT);
 
-// setInterval(() => {
-//     getMessages();
-//     getPeers();
-//     getOrigins();
-// }, 1000);
+setInterval(() => {
+    getRumors();
+    getMessages();
+    getPeers();
+    getOrigins();
+}, 1000);
