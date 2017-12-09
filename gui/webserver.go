@@ -92,7 +92,7 @@ func main() {
 
 	// handlers
 	r.HandleFunc("/", mainHandler)
-	r.HandleFunc("/main.js", jsHandler)
+	r.HandleFunc("/script.js", jsHandler)
 	r.HandleFunc("/style.css", cssHandler)
 	r.HandleFunc("/message", sendMessageHandler).Methods("POST")               // client send message
 	r.HandleFunc("/node", addNodeHandler).Methods("POST")                      // client add node
@@ -184,14 +184,14 @@ func getReachableNodesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func cssHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/style.css")
+	http.ServeFile(w, r, "public/style.css")
 }
 func mainHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/")
+	http.ServeFile(w, r, "public/")
 }
 
 func jsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/main.js")
+	http.ServeFile(w, r, "public/script.js")
 }
 
 func newFileHandler(w http.ResponseWriter, r *http.Request) {

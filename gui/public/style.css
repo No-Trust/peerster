@@ -1,0 +1,257 @@
+
+body {
+    --text-color: #ccc;
+    --green-color: #12b656;
+    
+    margin: 0;
+    background-color: #222426;
+    font-family: 'Courier New';
+    color: var(--text-color);
+}
+
+/*
+    Left Pane
+*/
+
+#left-pane {
+    --tab-height: 50px;
+    --left-pane-input-height: 60px;
+    
+    position: fixed;
+    height: 100vh;
+    width: 25vw;
+    background-color: #1a1c1e;
+}
+
+#left-pane-tab-container {
+    height: var(--tab-height);
+}
+
+.left-pane-tabs {
+    position: relative;
+    height: var(--tab-height);
+    width: 50%;
+    margin: 0;
+    border-top: 3px solid transparent;
+    box-sizing: border-box;
+    
+    font-size: 20px;
+    line-height: calc(var(--tab-height) + 5px);
+    text-align: center;
+    
+    float: left;
+    
+    cursor: pointer;
+    
+    transition: border-top 0.3s;
+}
+
+.left-pane-tabs[data-selected] {
+    border-top: 3px solid var(--green-color);
+}
+
+#left-pane-list {
+    position: relative;
+    height: calc(100vh - var(--tab-height) - var(--left-pane-input-height));
+    border: 1px solid transparent;
+    box-sizing: border-box;
+}
+
+.cards {
+    --margin: 8px;
+    --border-radius: var(--margin);
+    
+    position: relative;
+    height: 40px;
+    width: calc(100% - 2 * var(--margin));
+    margin: var(--margin);
+    border-radius: var(--border-radius);
+    
+    line-height: 40px;
+    text-align: center;
+    
+    background-color: #1e2022;
+    
+    cursor: pointer;
+    
+    opacity: 0.5;
+    
+    transition: opacity 0.3s;
+}
+
+.cards:hover,
+.cards[data-selected] {
+    opacity: 1;
+}
+
+#left-pane-input-container {
+    --margin: 8px;
+}
+
+#left-pane-input-container > * {
+    --height: calc(var(--left-pane-input-height) - 2 * var(--margin));
+    
+    height: var(--height);
+    margin: var(--margin);
+    border-radius: 5px;
+    
+    float: left;
+}
+
+.inputs {
+    border: 0;
+    box-sizing: border-box;
+    
+    resize: none;
+    outline: none;
+    
+    color: var(--text-color);
+}
+
+.inputs[disabled] {
+    color: #777;
+}
+
+#left-pane-input {
+    width: calc(80% - 2 * var(--margin));
+    margin-right: 0;
+    padding: 0 0 0 10px;
+    
+    font-size: 18px;
+    
+    background-color: #2e3032;
+}
+
+.buttons {
+    text-align: center;
+    
+    background-color: var(--green-color);
+    
+    cursor: pointer;
+}
+
+#left-pane-button {
+    width: calc(20% - var(--margin));
+    
+    line-height: var(--height);
+}
+
+/*
+    Message Pane
+*/
+
+#message-pane {
+    --message-input-height: 60px;
+    
+    position: fixed;
+    left: 25vw;
+    height: 100vh;
+    width: 75vw;
+}
+
+#message-list {
+    position: relative;
+    height: calc(100vh - var(--message-input-height));
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    
+    overflow-y: scroll;
+}
+
+.message-containers {
+    --margin: 8px;
+    
+    margin: var(--margin);
+}
+
+.message-containers-from-me > .messages {
+    background-color: var(--green-color);
+}
+
+.message-containers-from-me > .messages > p:first-of-type {
+    color: #087233;
+}
+
+.message-containers-from-me > .messages > p:nth-of-type(2) {
+    color: #eee;
+}
+
+.messages {
+    position: relative;
+    min-width: 250px;
+    max-width: 600px;
+    border-radius: var(--margin);
+    border: 1px solid transparent;
+    
+    display: inline-block;
+    
+    background-color: #1e2022;
+}
+
+.messages > p:first-of-type {
+    margin: 5px 10px 3px 10px;
+    
+    font-size: 10px;
+    color: #777;
+    
+    cursor: pointer;
+}
+
+.messages > p:nth-of-type(2) {
+    margin: 3px 10px 5px 10px;
+}
+
+#message-input-container > * {
+    --margin: 8px;
+    --height: calc(var(--message-input-height) - 2 * var(--margin));
+    --border-radius: var(--margin);
+    
+    position: relative;
+    left: 16.5vw;
+    height: var(--height);
+    margin: var(--margin);
+    border-radius: 5px;
+    
+    font-size: 20px;
+    
+    float: left;
+}
+
+#message-input {
+    width: 35vw;
+    margin-right: 0;
+    padding: 0 0 0 10px;
+    
+    font-size: 18px;
+    
+    background-color: #2e3032;
+}
+
+#file-input {
+    /*visibility: hidden;*/
+    display: none;
+}
+
+#message-attach-button {
+    width: 5vw;
+    margin-right: 0;
+    
+    color: #777;
+    line-height: var(--height);
+    
+    background-color: #2e3032;
+}
+
+#message-attach-button > div {
+    position: relative;
+    top: -2%;
+    left: -5%;
+    transform: rotate(45deg);
+}
+
+#message-send-button {
+    width: 5vw;
+    
+    line-height: var(--height);
+}

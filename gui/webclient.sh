@@ -13,4 +13,4 @@ python -mwebbrowser $URL
 
 
 # Lauch web server
-./guiclient -UIPort=$UIPORT -port=$WEBPORT
+./gui -UIPort=$UIPORT -port=$WEBPORT
