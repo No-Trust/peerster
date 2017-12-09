@@ -273,18 +273,21 @@ function getRumors() {
 
             // myNames.push(data.Name);
 
-            // rumors = data;
-            data.forEach(message => {
-
-                if (!(message.SenderName in rumors)) {
-                    rumors.SenderName = [];
-                }
-
-                rumors.SenderName.push(message);
-
-            });
-
-            updateChat();
+            if (data !== null) {
+                rumors = [];
+    
+                data.forEach(message => {
+    
+                    if (!(message.SenderName in rumors)) {
+                        rumors[message.SenderName] = [];
+                    }
+    
+                    rumors[message.SenderName].push(message);
+    
+                });
+    
+                updateChat();
+            }
 
         }).catch(console.error);
 
@@ -298,18 +301,21 @@ function getMessages() {
 
             // myNames.push(data.Name);
 
-            // messages = data;
-            data.forEach(message => {
+            if (data !== null) {
+                messages = [];
 
-                if (!(message.Origin in messages)) {
-                    messages.Origin = [];
-                }
-
-                messages.Origin.push(message);
-
-            });
-
-            updateChat();
+                data.forEach(message => {
+    
+                    if (!(message.Origin in messages)) {
+                        messages[message.Origin] = [];
+                    }
+    
+                    messages[message.Origin].push(message);
+    
+                });
+    
+                updateChat();
+            }
 
         }).catch(console.error);
 
