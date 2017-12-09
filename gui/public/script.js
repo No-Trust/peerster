@@ -321,10 +321,11 @@ function getPeers() {
         .then(response => response.json())
         .then(data => data.forEach(peer => {
 
-            if (!knownPeers.includes(peer)) {
-                knownPeers.push(peer);
+            let peerString = `${peer.Address.IP}:${peer.Address.Port}`;
+            if (!knownPeers.includes(peerString)) {
+                knownPeers.push(peerString);
                 if (peersTabIsSelected()) {
-                    addPeer(peer);
+                    addPeer(peerString);
                 }
             }
 
