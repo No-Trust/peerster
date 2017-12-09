@@ -158,7 +158,7 @@ func handleServerMessage(buf []byte, remoteaddr *net.UDPAddr) {
 // HTTP Handlers
 
 func getNodesHandler(w http.ResponseWriter, r *http.Request) {
-	buf, err := json.Marshal(peers)
+	buf, err := json.Marshal(peers.Peers)
 	common.CheckError(err)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(buf)
