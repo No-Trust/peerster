@@ -14,7 +14,6 @@ type Packet struct {
 // A message for client <-> gossiper communication
 type ClientPacket struct {
 	NewNode           *NewNode           // add node request from client
-	NewName           *string            // change name request from client
 	RequestUpdate     *bool              // update request from client (to update messages, nodes)
 	NewFile           *NewFile           // index file request from client
 	FileRequest       *FileRequest       // file request from client

@@ -22,11 +22,6 @@ func processNewNode(nnode *common.NewNode, g *Gossiper) {
 	g.standardOutputQueue <- g.peerSet.PeersListString()
 }
 
-// New Name : user changed the name of the gossiper
-func processNewName(name *string, g *Gossiper) {
-	g.Parameters.Identifier = *name
-}
-
 // New Message : a message has been sent by the user
 func processNewMessage(msg *common.NewMessage, g *Gossiper, remoteaddr *net.UDPAddr) {
 	// new message
