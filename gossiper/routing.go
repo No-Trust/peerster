@@ -52,7 +52,7 @@ func (r *RoutingTable) AddNextHop(origin string, remoteaddr *net.UDPAddr) {
 	if remoteaddrStr == r.peerAddress {
 		return
 	}
-	
+
 	if origin == "" {
 		return
 	}
@@ -76,9 +76,11 @@ func (r *RoutingTable) copy() *RoutingTable {
 
 func (r *RoutingTable) GetIds() []string {
 	r.mutex.Lock()
-	ids := make([]string, len(r.table))
+	ids := make([]string, 0)
 	for k, _ := range r.table {
-		ids = append(ids, k)
+		if k != "" {
+			ids = append(ids, k)
+		}
 	}
 	r.mutex.Unlock()
 	return ids

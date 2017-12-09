@@ -140,10 +140,6 @@ func handleClientMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		// process new node
 		processNewNode(pkt.NewNode, g)
 	}
-	if pkt.NewName != nil {
-		// process new name
-		processNewName(pkt.NewName, g)
-	}
 	if pkt.NewMessage != nil {
 		// process new message
 		processNewMessage(pkt.NewMessage, g, remoteaddr)
