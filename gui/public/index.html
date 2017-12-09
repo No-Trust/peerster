@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    
+    <head>
+        <title>Peerster</title>
+        
+        <!-- Material Icons -->
+        <link href='https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/2.0.46/css/materialdesignicons.min.css' media='all' rel='stylesheet' type='text/css' />
+        
+        <link rel='stylesheet' type='text/css' href='style.css'/>
+        <script src='script.js' defer></script>
+    </head>
+    
+    <body>
+        
+        <div id='left-pane'>
+            <div id='left-pane-tab-container'>
+                <div id='chats-tab' class='left-pane-tabs' data-selected>Chats</div>
+                <div id='peers-tab' class='left-pane-tabs'>Peers</div>
+            </div>
+            <div id='left-pane-list'></div>
+            <div id='left-pane-input-container'>
+                <input id='left-pane-input' class='inputs' placeholder='Enter a name'/>
+                <div id='left-pane-button' class='buttons mdi mdi-account-edit mdi-36px'></div>
+            </div>
+        </div>
+        
+        <div id='message-pane'>
+            <div id='message-list'></div>
+            <div id='message-input-container'>
+                <input id='message-input' class='inputs' placeholder='Enter a message'/>
+                <div id='message-attach-button' class='buttons'>
+                    <input id='file-input' type='file'/>
+                    <div class='mdi mdi-paperclip mdi-36px'></div>
+                </div>
+                <div id='message-send-button' class='buttons mdi mdi-send mdi-36px'></div>
+            </div>
+        </div>
+        
+    </body>
+    
+</html>

@@ -3,7 +3,7 @@ package main
 import (
   "net"
   "github.com/dedis/protobuf"
-  "github.com/pthevenet/Peerster/hw3/part1/common"
+  "github.com/No-Trust/peerster/common"
 )
 
 // Listening Loop, calls handler when there is a new packet
