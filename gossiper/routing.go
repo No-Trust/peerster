@@ -52,6 +52,10 @@ func (r *RoutingTable) AddNextHop(origin string, remoteaddr *net.UDPAddr) {
 	if remoteaddrStr == r.peerAddress {
 		return
 	}
+	
+	if origin == "" {
+		return
+	}
 
 
 	r.mutex.Lock()
