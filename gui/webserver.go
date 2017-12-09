@@ -1,14 +1,15 @@
 package main
 
 import (
+	"io/ioutil"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/No-Trust/peerster/common"
 	"github.com/dedis/protobuf"
 	"github.com/gorilla/mux"
-	"github.com/pthevenet/Peerster/hw3/part1/common"
 	"math/big"
 	"net"
 	"net/http"
@@ -25,6 +26,33 @@ var peers common.PeerSlice
 var messages []common.NewMessage
 var privateMessages []common.NewPrivateMessage
 var ids []string
+
+type WebMessage struct {
+	message     string
+	destination string
+	filename    string
+	hexhash     string
+	node        string
+}
+
+func parse(req *http.Request) *WebMessage {
+	bytes, err := ioutil.ReadAll(req.Body)
+	if common.CheckRead(err) {
+		return nil
+	}
+	err = req.Body.Close()
+	if common.CheckRead(err) {
+		return nil
+	}
+
+	webm := WebMessage{}
+	err = json.Unmarshal(bytes, &webm)
+	if common.CheckRead(err) {
+		return nil
+	}
+
+	return &webm
+}
 
 func main() {
 	maxIdentifier := big.NewInt(1000000000000)
@@ -68,9 +96,8 @@ func main() {
 	r.HandleFunc("/style.css", cssHandler)
 	r.HandleFunc("/message", sendMessageHandler).Methods("POST")               // client send message
 	r.HandleFunc("/node", addNodeHandler).Methods("POST")                      // client add node
-	r.HandleFunc("/id", changeNameHandler).Methods("POST")                     // client change id
 	r.HandleFunc("/file", newFileHandler).Methods("POST")                      // client adds a file
-	r.HandleFunc("/download", downloadFileHandler).Methods("POST")            // client request to download a file
+	r.HandleFunc("/download", downloadFileHandler).Methods("POST")             // client request to download a file
 	r.HandleFunc("/message", getMessagesHandler).Methods("GET")                // request new messages
 	r.HandleFunc("/private-message", getPrivateMessagesHandler).Methods("GET") // request new private messages
 	r.HandleFunc("/node", getNodesHandler).Methods("GET")                      // request update on nodes
@@ -167,23 +194,15 @@ func jsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "web/main.js")
 }
 
-func changeNameHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	newName := r.Form.Get("name")
-	name = newName
-	fmt.Println("Received name change request : ", name)
-	// sending
-
-	outputQueue <- &common.ClientPacket{
-		NewName: &name,
-	}
-}
-
 func newFileHandler(w http.ResponseWriter, r *http.Request) {
 	// Assumption : the file is present in the folder of the running webserver
 	// Because js security prevent giving absolute filepath
-	r.ParseForm()
-	filename := r.Form.Get("filename")
+
+	webm := parse(r)
+	if webm == nil {
+		return
+	}
+	filename := webm.filename
 	fmt.Println("*** file : ", filename)
 
 	outputQueue <- &common.ClientPacket{
@@ -192,10 +211,14 @@ func newFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	hexhash := r.Form.Get("MetaHash")
-	destination := r.Form.Get("Destination")
-	filename := r.Form.Get("FileName")
+	webm := parse(r)
+	if webm == nil {
+		return
+	}
+
+	hexhash := webm.hexhash
+	destination := webm.destination
+	filename := webm.filename
 	fmt.Println("*** Requesting file :", filename, hexhash)
 	// hex -> []byte
 	metahash, err := hex.DecodeString(hexhash)
@@ -205,17 +228,21 @@ func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// sending
 	outputQueue <- &common.ClientPacket{
-		FileRequest: &common.FileRequest {
-			MetaHash: metahash,
+		FileRequest: &common.FileRequest{
+			MetaHash:    metahash,
 			Destination: destination,
-			FileName: filename,
+			FileName:    filename,
 		},
 	}
 }
 
 func addNodeHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	node := r.Form.Get("node")
+	webm := parse(r)
+	if webm == nil {
+		return
+	}
+
+	node := webm.node
 
 	fmt.Println("Received add node request : ", node)
 
@@ -236,9 +263,13 @@ func addNodeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	msgText := r.Form.Get("msg")
-	dest := r.Form.Get("dest")
+	webm := parse(r)
+	if webm == nil {
+		return
+	}
+
+	msgText := webm.message
+	dest := webm.destination
 
 	if dest != "" {
 		// private message
