@@ -85,7 +85,7 @@ func processNewPrivateMessage(pcm *common.NewPrivateMessage, g *Gossiper) {
 		g.clientOutputQueue <- &common.Packet{
 			ClientPacket: common.ClientPacket{
 				NewPrivateMessage: &common.NewPrivateMessage{
-					Origin: pm.Origin,
+					Origin: g.Parameters.Identifier,
 					Dest:   pm.Dest,
 					Text:   pm.Text,
 				},

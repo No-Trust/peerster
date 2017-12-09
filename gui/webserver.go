@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -10,7 +9,6 @@ import (
 	"github.com/No-Trust/peerster/common"
 	"github.com/dedis/protobuf"
 	"github.com/gorilla/mux"
-	"math/big"
 	"net"
 	"net/http"
 	"time"
@@ -21,7 +19,6 @@ var LocalAddr *net.UDPAddr
 var ServerAddr *net.UDPAddr
 var ServerConn *net.UDPConn
 var outputQueue chan *common.ClientPacket
-var name string
 var peers common.PeerSlice
 var messages []common.NewMessage
 var privateMessages []common.NewPrivateMessage
@@ -55,12 +52,6 @@ func parse(req *http.Request) *WebMessage {
 }
 
 func main() {
-	maxIdentifier := big.NewInt(1000000000000)
-
-	nBig, _ := rand.Int(rand.Reader, maxIdentifier)
-	n := nBig.Int64()
-
-	name = fmt.Sprintf("%d", n)
 
 	// flags
 	UIPort := flag.Uint("UIPort", 10000, "port for the UI client")
@@ -284,7 +275,7 @@ func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 		outputQueue <- &common.ClientPacket{
 			NewPrivateMessage: &common.NewPrivateMessage{
-				Origin: name, // putting client name
+				Origin: "", // for compatibility
 				Dest:   dest,
 				Text:   msgText,
 			},
@@ -296,7 +287,7 @@ func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		// sending
 		outputQueue <- &common.ClientPacket{
 			NewMessage: &common.NewMessage{
-				SenderName: name, // putting client name
+				SenderName: "", // for compatibility
 				Text:       msgText,
 			},
 		}
