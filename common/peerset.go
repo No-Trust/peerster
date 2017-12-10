@@ -25,13 +25,17 @@ func (ps *PeerSet) Add(peer Peer) {
 	if !ps.Contains(peer) {
 		// if it does not exists yet, add it
 		ps.mutex.Lock()
-		ps.peers = append(ps.peers, peer.Copy())
+		// if this is an ipv6 address, do not add
+		if peer.Address.IP.To4() != nil {
+			// this is an IPv4 address
+			ps.peers = append(ps.peers, peer.Copy())
+		}
 		ps.mutex.Unlock()
 	}
 }
 
 // Check if a PeerSet contains a Peer
-func (ps *PeerSet) Contains(peer Peer) bool {
+func (ps PeerSet) Contains(peer Peer) bool {
 	ps.mutex.Lock()
 	for _, p := range ps.peers {
 		if (&p).Equals(&peer) {
@@ -43,12 +47,12 @@ func (ps *PeerSet) Contains(peer Peer) bool {
 	return false
 }
 
-func (ps *PeerSet) Remove(peer *Peer) PeerSet {
+func (ps PeerSet) Remove(peer *Peer) PeerSet {
 	newPeers := ps.ToPeerArray()
 	// look for the peer
 	index := -1
 	for i, p := range newPeers {
-		if (p.Equals(peer)) {
+		if p.Equals(peer) {
 			index = i
 			break
 		}
@@ -61,18 +65,18 @@ func (ps *PeerSet) Remove(peer *Peer) PeerSet {
 		newPeers[l-1], newPeers[index] = newPeers[index], newPeers[l-1]
 		newPeers = newPeers[:l-1]
 
-		return PeerSet {
+		return PeerSet{
 			peers: newPeers,
 			mutex: &sync.Mutex{},
 		}
 	}
-	return PeerSet {
+	return PeerSet{
 		peers: ps.ToPeerArray(),
 		mutex: &sync.Mutex{},
 	}
 }
 
-func (ps *PeerSet) ToPeerArray() []Peer {
+func (ps PeerSet) ToPeerArray() []Peer {
 	ps.mutex.Lock()
 	slice := make([]Peer, len(ps.peers))
 	for i, peer := range ps.peers {
@@ -82,7 +86,7 @@ func (ps *PeerSet) ToPeerArray() []Peer {
 	return slice
 }
 
-func (ps *PeerSet) ToPeerSlice() PeerSlice {
+func (ps PeerSet) ToPeerSlice() PeerSlice {
 	slice := ps.ToPeerArray()
 	return PeerSlice{slice}
 }
@@ -103,7 +107,7 @@ func NewSetFromAddrs(addrs []net.UDPAddr) PeerSet {
 	return newPeerSet
 }
 
-func (ps *PeerSet) RandomPeer() *Peer {
+func (ps PeerSet) RandomPeer() *Peer {
 	// Returns a random peer from the PeerSet
 	ps.mutex.Lock()
 	if len(ps.peers) == 0 {
@@ -118,7 +122,7 @@ func (ps *PeerSet) RandomPeer() *Peer {
 	return &npeer
 }
 
-func (ps *PeerSet) PeersListString() *string {
+func (ps PeerSet) PeersListString() *string {
 	str := ""
 	ps.mutex.Lock()
 	for _, peer := range ps.peers {
@@ -131,7 +135,7 @@ func (ps *PeerSet) PeersListString() *string {
 	return &str
 }
 
-func (ps *PeerSet) Str() string {
+func (ps PeerSet) Str() string {
 	str := "PeerSet :\n"
 	ps.mutex.Lock()
 	for _, peer := range ps.peers {

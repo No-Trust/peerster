@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -9,9 +8,11 @@ import (
 	"github.com/No-Trust/peerster/common"
 	"github.com/dedis/protobuf"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
+	"sync"
 )
 
 var UIPort *uint
@@ -19,7 +20,8 @@ var LocalAddr *net.UDPAddr
 var ServerAddr *net.UDPAddr
 var ServerConn *net.UDPConn
 var outputQueue chan *common.ClientPacket
-var peers common.PeerSlice
+var peers []common.Peer
+var peersMutex = &sync.Mutex{}
 var messages []common.NewMessage
 var privateMessages []common.NewPrivateMessage
 var ids []string
@@ -86,10 +88,10 @@ func main() {
 	r.HandleFunc("/script.js", jsHandler)
 	r.HandleFunc("/style.css", cssHandler)
 
-	r.HandleFunc("/message", sendMessageHandler).Methods("POST")               // client send message
-	r.HandleFunc("/node", addNodeHandler).Methods("POST")                      // client add node
-	r.HandleFunc("/file", newFileHandler).Methods("POST")                      // client adds a file
-	r.HandleFunc("/download", downloadFileHandler).Methods("POST")             // client request to download a file
+	r.HandleFunc("/message", sendMessageHandler).Methods("POST")   // client send message
+	r.HandleFunc("/node", addNodeHandler).Methods("POST")          // client add node
+	r.HandleFunc("/file", newFileHandler).Methods("POST")          // client adds a file
+	r.HandleFunc("/download", downloadFileHandler).Methods("POST") // client request to download a file
 
 	r.HandleFunc("/message", getMessagesHandler).Methods("GET")                // request new messages
 	r.HandleFunc("/private-message", getPrivateMessagesHandler).Methods("GET") // request new private messages
@@ -134,7 +136,13 @@ func handleServerMessage(buf []byte, remoteaddr *net.UDPAddr) {
 	}
 	if pkt.PeerSlice != nil {
 		// update peers
-		peers = *pkt.PeerSlice
+		peersMutex.Lock()
+		peers = make([]common.Peer, len(pkt.PeerSlice.Peers))
+		// copy(peers, pkt.PeerSlice.Peers)
+		for i, p := range pkt.PeerSlice.Peers {
+			peers[i] = p.Copy()
+		}
+		peersMutex.Unlock()
 	}
 	if pkt.NewPrivateMessage != nil {
 		// update private messages
@@ -149,10 +157,15 @@ func handleServerMessage(buf []byte, remoteaddr *net.UDPAddr) {
 // HTTP Handlers
 
 func getNodesHandler(w http.ResponseWriter, r *http.Request) {
-	buf, err := json.Marshal(peers.Peers)
+
+	// build array of strings
+	peersMutex.Lock()
+	buf, err := json.Marshal(peers)
+	peersMutex.Unlock()
 	common.CheckError(err)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(buf)
+
 }
 
 func getMessagesHandler(w http.ResponseWriter, r *http.Request) {
