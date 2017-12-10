@@ -174,15 +174,23 @@ function addMessage(origin, message) {
 }
 
 function addPeer(peer) {
+
+    function copy() {
+        clearTimeout(timeout);
+        copyTextToClipboard(PEER.innerHTML);
+        PEER.innerHTML = PEER.innerHTML.endsWith('Copied!') ? 'Copied the copy!' :
+            ((PEER.innerHTML.length > 70) || (PEER.innerHTML === 'COPYCEPTION!')) ? 'COPYCEPTION!' :
+            !PEER.innerHTML.endsWith('copy!') ? 'Copied!' :
+            `${PEER.innerHTML.slice(0, PEER.innerHTML.length - 1)} of the copy!`;
+        timeout = setTimeout(() => PEER.innerHTML = peer, 1000);
+    }
+
+    let timeout;
     const PEER = document.createElement('P');
     PEER.classList.add('cards', 'peer-cards');
     PEER.innerHTML = peer;
 
-    PEER.addEventListener('click', event => {
-        copyTextToClipboard(PEER.innerHTML);
-        PEER.innerHTML = 'Copied!';
-        setTimeout(() => PEER.innerHTML = peer, 1000);
-    });
+    PEER.addEventListener('click', copy);
 
     LEFT_PANE_LIST.appendChild(PEER);
 }
