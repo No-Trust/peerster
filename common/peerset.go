@@ -17,6 +17,7 @@ type PeerSlice struct {
 type PeerSet struct {
 	peers []Peer
 	mutex *sync.Mutex
+	except net.UDPAddr // address to exclude : own's address
 }
 
 // Add a Peer to a PeerSet
@@ -28,7 +29,9 @@ func (ps *PeerSet) Add(peer Peer) {
 		// if this is an ipv6 address, do not add
 		if peer.Address.IP.To4() != nil {
 			// this is an IPv4 address
-			ps.peers = append(ps.peers, peer.Copy())
+			if ps.except.IP.String() != peer.Address.IP.String() || ps.except.Port != peer.Address.Port {
+				ps.peers = append(ps.peers, peer.Copy())
+			}
 		}
 		ps.mutex.Unlock()
 	}
@@ -91,15 +94,16 @@ func (ps PeerSet) ToPeerSlice() PeerSlice {
 	return PeerSlice{slice}
 }
 
-func NewSet() PeerSet {
+func NewSet(except net.UDPAddr) PeerSet {
 	return PeerSet{
 		peers: make([]Peer, 0),
 		mutex: &sync.Mutex{},
+		except: except,
 	}
 }
 
-func NewSetFromAddrs(addrs []net.UDPAddr) PeerSet {
-	newPeerSet := NewSet()
+func NewSetFromAddrs(addrs []net.UDPAddr, except net.UDPAddr) PeerSet {
+	newPeerSet := NewSet(except)
 	for _, addr := range addrs {
 		var p Peer = Peer{addr, ""}
 		newPeerSet.Add(p)

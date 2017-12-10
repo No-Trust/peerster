@@ -32,7 +32,7 @@ type Gossiper struct {
 // Create a new Gossiper
 func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 
-	peerSet := common.NewSetFromAddrs(peerAddrs)
+	peerSet := common.NewSetFromAddrs(peerAddrs, parameters.GossipAddr)
 	channelSize := parameters.ChannelSize
 	metadataSet := NewMetadataSet()
 	gossiper := Gossiper{
@@ -96,6 +96,7 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		Address:    *remoteaddr,
 		Identifier: "",
 	}
+
 	g.peerSet.Add(A) // adding A to the known peers
 
 	// demultiplex packets
