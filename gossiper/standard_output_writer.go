@@ -42,7 +42,7 @@ func (msg *RumorMessage) RumorString(source *net.UDPAddr) *string {
 	return &str
 }
 
-func (msg *RumorMessage) MongeringString(dest *net.UDPAddr) *string {
+func (msg *RumorMessage) MongeringString(dest net.UDPAddr) *string {
 	rumorType := "TEXT"
 	if msg.Text == "" {
 		rumorType = "ROUTE"

@@ -7,6 +7,7 @@ import (
 	"github.com/No-Trust/peerster/common"
 	"github.com/dedis/protobuf"
 	"net"
+	"fmt"
 	"sync"
 )
 
@@ -48,7 +49,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		fileWaiters:         make(map[string]chan *DataReply),
 		fileWaitersMutex:    &sync.Mutex{},
 		standardOutputQueue: make(chan *string, channelSize),
-		routingTable:        *NewRoutingTable(parameters.Identifier, UDPAddrToString(&parameters.GossipAddr)),
+		routingTable:        *NewRoutingTable(parameters.Identifier, UDPAddrToString(parameters.GossipAddr)),
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 	}
@@ -78,6 +79,8 @@ func (g *Gossiper) Start() {
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
 
+	fmt.Println("INITIALIZATION DONE")
+
 	// waiting for all goroutines to terminate
 	wg.Wait()
 }
@@ -102,23 +105,23 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 	// demultiplex packets
 	if pkt.Rumor != nil {
 		// process rumor
-		g.processRumor(pkt.Rumor, remoteaddr)
+		go g.processRumor(pkt.Rumor, remoteaddr)
 	}
 	if pkt.Status != nil {
 		// process status
-		g.processStatus(pkt.Status, remoteaddr)
+		go g.processStatus(pkt.Status, remoteaddr)
 	}
 	if pkt.Private != nil {
 		// process private message
-		g.processPrivateMessage(pkt.Private, remoteaddr)
+		go g.processPrivateMessage(pkt.Private, remoteaddr)
 	}
 	if pkt.DataRequest != nil {
 		// process data request
-		g.processDataRequest(pkt.DataRequest, remoteaddr)
+		go g.processDataRequest(pkt.DataRequest, remoteaddr)
 	}
 	if pkt.DataReply != nil {
 		// process data reply
-		g.processDataReply(pkt.DataReply, remoteaddr)
+		go g.processDataReply(pkt.DataReply, remoteaddr)
 	}
 
 	return

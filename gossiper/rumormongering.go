@@ -11,7 +11,7 @@ import (
 // Send a rumor to destination and continue with a random peer with probability 1/2
 func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 
-	g.standardOutputQueue <- rumor.MongeringString(&destPeer.Address)
+	g.standardOutputQueue <- rumor.MongeringString(destPeer.Address)
 	// send rumor to peer
 
 	g.gossipOutputQueue <- &Packet{
@@ -25,12 +25,11 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 	statusChannel := make(chan *PeerStatus)
 	// format : id/ip:port/nextID
 
-	//statusString := rumor.Origin + "/" + addrToString(destPeer.Address) + "/" rumor.PeerMessage.ID + 1
-	statusString := fmt.Sprintf("%s %s %d", rumor.Origin, addrToString(destPeer.Address), rumor.ID+1)
+	ackID := AckString(destPeer.Address, rumor.Origin, rumor.ID+1)
 
 	// register for listener
 	g.waitersMutex.Lock()
-	_, present := g.gossiperWaiters[statusString]
+	_, present := g.gossiperWaiters[ackID]
 	g.waitersMutex.Unlock()
 
 	if present {
@@ -42,7 +41,7 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 
 	// Register
 	g.waitersMutex.Lock()
-	g.gossiperWaiters[statusString] = statusChannel
+	g.gossiperWaiters[ackID] = statusChannel
 	g.waitersMutex.Unlock()
 
 	// waiter
@@ -57,7 +56,20 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			timer.Stop()
 			close(statusChannel)
 			g.waitersMutex.Lock()
-			g.gossiperWaiters[statusString] = nil
+			g.gossiperWaiters[ackID] = nil
+			g.waitersMutex.Unlock()
+			nextDestPeer := g.peerSet.RandomPeer()
+			if destPeer != nil {
+				go g.rumormonger(rumor, nextDestPeer)
+			}
+			return
+		case <-statusChannel:
+			// received the ack before timeout
+			fmt.Println("@-@-@-@-@-@-@")
+			timer.Stop()
+			close(statusChannel)
+			g.waitersMutex.Lock()
+			g.gossiperWaiters[ackID] = nil
 			g.waitersMutex.Unlock()
 			// rumormonger again with probability 1/2
 			if flipCoin() {
@@ -67,15 +79,6 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 					go g.rumormonger(rumor, nextDestPeer)
 				}
 			}
-			return
-		case <-statusChannel:
-			// received the ack before timeout
-			// compare status vector
-			timer.Stop()
-			close(statusChannel)
-			g.waitersMutex.Lock()
-			g.gossiperWaiters[statusString] = nil
-			g.waitersMutex.Unlock()
 			return
 		}
 	}()

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/No-Trust/peerster/common"
 	"github.com/dedis/protobuf"
 	"math/rand"
@@ -40,9 +41,14 @@ func stringToUDPAddr(ipport string) net.UDPAddr {
 	return addr
 }
 
-func UDPAddrToString(addr *net.UDPAddr) string {
+func UDPAddrToString(addr net.UDPAddr) string {
 	ipport := addr.IP.String() + ":" + strconv.Itoa(addr.Port)
 	return ipport
+}
+
+// identifier string for an ack
+func AckString(addr net.UDPAddr, origin string, nextID uint32) string {
+	return fmt.Sprintf("%s | %s | %d", UDPAddrToString(addr), origin, nextID)
 }
 
 // Writer for gossiper packets : send every packet coming for a channel to the destination

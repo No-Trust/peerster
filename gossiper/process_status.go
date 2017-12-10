@@ -20,11 +20,11 @@ func (g *Gossiper) processStatus(status *StatusPacket, remoteaddr *net.UDPAddr) 
 
 	for _, peerstatus := range status.Want {
 		// loop over each peerstatus
-		// format : id/ip:port
-		statusString := peerstatus.Identifier + "/" + addrToString(*remoteaddr)
+
+		ackID := AckString(*remoteaddr, peerstatus.Identifier, peerstatus.NextID)
 
 		g.waitersMutex.Lock()
-		c, present := g.gossiperWaiters[statusString]
+		c, present := g.gossiperWaiters[ackID]
 		g.waitersMutex.Unlock()
 		if present {
 			// this is an ack

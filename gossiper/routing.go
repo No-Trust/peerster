@@ -43,7 +43,7 @@ func (r *RoutingTable) Str() string {
 }
 
 func (r *RoutingTable) AddNextHop(origin string, remoteaddr *net.UDPAddr) {
-	remoteaddrStr := UDPAddrToString(remoteaddr)
+	remoteaddrStr := UDPAddrToString(*remoteaddr)
 
 	if origin == r.peerID {
 		return
@@ -133,7 +133,7 @@ func (rumor *RumorMessage) broadcastTo(g *Gossiper, ps common.PeerSet) {
 	// broadcast the route message to all given peers
 	peers := ps.ToPeerArray()
 	for _, peer := range peers {
-		g.standardOutputQueue <- rumor.MongeringString(&peer.Address)
+		g.standardOutputQueue <- rumor.MongeringString(peer.Address)
 		g.gossipOutputQueue <- &Packet{
 			GossipPacket: GossipPacket{
 				Rumor: rumor,
@@ -157,7 +157,7 @@ func broadcastNewRoute(g *Gossiper) {
 			Text:   "",
 		}
 
-		g.standardOutputQueue <- routerumor.MongeringString(&peer.Address)
+		g.standardOutputQueue <- routerumor.MongeringString(peer.Address)
 
 		// update status vector
 		g.vectorClock.Update(g.Parameters.Identifier)
