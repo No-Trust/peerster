@@ -28,7 +28,8 @@ func main() {
 
 	rtimer := flag.Uint("rtimer", 60, "timer duration for the sending of route rumors")
 	etimer := flag.Uint("etimer", 2, "timer duration for the sending of anti entropy status")
-	noforward := flag.Bool("noforward", false, "no forward mode : forwards only route rumors")
+	noforward := flag.Bool("noforward", false, "for testing : forwarding of route rumors only")
+	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
 
 	flag.Parse()
 
@@ -84,6 +85,7 @@ func main() {
 		Rtimer:          *rtimer,
 		Hoplimit:        HOP_LIMIT,
 		NoForward:       *noforward,
+		NatTraversal:    *nat_traversal,
 		GossipAddr:      *gossipAddr,
 		GossipConn:      *gossipConn,
 		UIAddr:          *UIAddr,

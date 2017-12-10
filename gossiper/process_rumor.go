@@ -9,7 +9,6 @@ import (
 // Handler for inbound Rumor Message
 func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 	// process an inbound rumor
-
 	var directRoute bool = false
 
 	if rumor.LastIP == nil || rumor.LastPort == nil {
@@ -17,16 +16,21 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 		directRoute = true
 	} else {
 		// present
-		// Add the new peer
-		originPeer := common.Peer{
-			Address: net.UDPAddr{
-				IP:   *rumor.LastIP,
-				Port: *rumor.LastPort,
-				Zone: "",
-			},
-			Identifier: "",
+		if g.Parameters.NatTraversal {
+
+			// Add the new peer
+			originPeer := common.Peer{
+				Address: net.UDPAddr{
+					IP:   *rumor.LastIP,
+					Port: *rumor.LastPort,
+					Zone: "",
+				},
+				Identifier: "",
+			}
+
+			g.peerSet.Add(originPeer)
 		}
-		g.peerSet.Add(originPeer)
+
 	}
 	// overwriting LastIP and LastPort
 	rumor.LastIP = &(remoteaddr.IP)
@@ -37,10 +41,12 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 	g.standardOutputQueue <- rumor.RumorString(remoteaddr)
 
 	if g.messages.Contains(rumor) {
-		// check if this is the same previous message, and that there is a direct route
-		if directRoute && rumor.ID == (g.vectorClock.Get(rumor.Origin)-1) {
-			// update nex hop routing table if the route is direct, and if the rumor is the same as the previous wanted rumor
-			g.routingTable.AddNextHop(rumor.Origin, remoteaddr)
+		if g.Parameters.NatTraversal {
+			// check if this is the same previous message, and that there is a direct route
+			if directRoute && rumor.ID == (g.vectorClock.Get(rumor.Origin)-1) {
+				// update nex hop routing table if the route is direct, and if the rumor is the same as the previous wanted rumor
+				g.routingTable.AddNextHop(rumor.Origin, remoteaddr)
+			}
 		}
 
 		// do nothing

@@ -12,6 +12,7 @@ type Parameters struct {
 	Rtimer          uint        // rate of route rumors
 	Hoplimit        uint32      // TTL for the sending of private messages
 	NoForward       bool        // for testing : if set, does not forward any packet except route rumors
+	NatTraversal    bool        // if set, activates the nat traversal option
 	GossipAddr      net.UDPAddr // ip:port of the gossip connection
 	GossipConn      net.UDPConn // gossip connection
 	UIAddr          net.UDPAddr // ip:port of the client connection
