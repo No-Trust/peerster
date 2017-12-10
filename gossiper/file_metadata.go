@@ -3,7 +3,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 )
 
@@ -73,7 +72,6 @@ func (ms *MetadataSet) Get(hash []byte) *FileMetadata {
 	ms.mutex.Lock()
 	for _, fm := range ms.metadatas {
 		if bytes.Equal(fm.Metahash, hash) {
-			fmt.Println("WTF : ", fm.Name, "\nmetahash : ", fm.Metahash, "\nhash : ", hash)
 			ms.mutex.Unlock()
 			return &fm
 		}

@@ -88,8 +88,6 @@ func (fds *FileDownloads) Remove(f *FileDownload) {
 // Perform the download from given information in the FileRequest
 func startDownload(g *Gossiper, filereq *common.FileRequest) {
 
-	fmt.Println("looking in metadata for hash : ", filereq.MetaHash)
-
 	// assuming we have the metahash
 	metadata := g.metadataSet.Get(filereq.MetaHash)
 

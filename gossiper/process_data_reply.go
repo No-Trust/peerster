@@ -11,6 +11,8 @@ func (g *Gossiper) processDataReply(reply *DataReply, remoteaddr *net.UDPAddr) {
 
 	if reply.Destination == g.Parameters.Identifier {
 
+		g.standardOutputQueue <- reply.DataReplyString()
+
 		dataReplyString := string(reply.HashValue)
 
 		g.fileWaitersMutex.Lock()

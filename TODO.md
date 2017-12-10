@@ -4,3 +4,4 @@
 
 - stop last ip nonsense
 - do not store itself as peer
+- ipv6

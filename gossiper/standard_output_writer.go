@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
@@ -34,8 +35,7 @@ func (msg *RumorMessage) RumorString(source *net.UDPAddr) *string {
 	str := ""
 	if msg.Text == "" {
 		// route rumor
-		//str := fmt.Sprintf("ROUTE RUMOR origin %s from %s:%s ID %d", msg.Origin, source.IP.String(), strconv.Itoa(source.Port), msg.ID)
-		str += fmt.Sprintf("DSDV %s:%s:%d \n", msg.Origin, source.IP.String(), source.Port)
+		str += fmt.Sprintf("DSDV %s: %s:%d \n", msg.Origin, source.IP.String(), source.Port)
 	}
 	// rumor message
 	str += fmt.Sprintf("RUMOR origin %s from %s:%s ID %d contents %s", msg.Origin, source.IP.String(), strconv.Itoa(source.Port), msg.ID, msg.Text)
@@ -80,12 +80,21 @@ func (msg *StatusPacket) AntiEntropyString(peer *net.UDPAddr) *string {
 }
 
 func (pm *PrivateMessage) PrivateMessageString(source *net.UDPAddr) *string {
-	//str := fmt.Sprintf("PRIVATE MESSAGE origin %s from %s:%s contents %s", pm.Origin, source.IP.String(), strconv.Itoa(source.Port), pm.Text)
 	str := fmt.Sprintf("PRIVATE: %s:%d:%s", pm.Origin, pm.HopLimit, pm.Text)
 	return &str
 }
 
 func (req *DataRequest) DataRequestString(source *net.UDPAddr) *string {
-  str := fmt.Sprintf("DATA REQUEST: %s:%d:%s:%s", req.Origin, req.HopLimit, req.FileName, string(req.HashValue))
-  return &str
+	str := fmt.Sprintf("DATA REQUEST: %s:%d:%s:%s", req.Origin, req.HopLimit, req.FileName, string(req.HashValue))
+	return &str
+}
+
+func (reply *DataReply) DataReplyString() *string {
+	str := fmt.Sprintf("DATA REPLY: %s:%d:%s:%s", reply.Origin, reply.HopLimit, reply.FileName, hex.EncodeToString(reply.HashValue))
+	return &str
+}
+
+func FileSubmissionDone(metahash []byte) *string {
+	str := fmt.Sprintf("CLIENT FILE ACCEPTED metahash %s", hex.EncodeToString(metahash))
+	return &str
 }

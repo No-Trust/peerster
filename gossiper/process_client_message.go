@@ -3,8 +3,6 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"github.com/No-Trust/peerster/common"
 	"io/ioutil"
 	"net"
@@ -181,9 +179,6 @@ func processNewFile(newfile *common.NewFile, g *Gossiper) {
 		Metahash: metahash,
 	}
 
-	str := hex.EncodeToString(metahash)
-	fmt.Println("metahash :", str)
-
 	g.metadataSet.Add(meta)
 
 	// store file in disk
@@ -196,7 +191,8 @@ func processNewFile(newfile *common.NewFile, g *Gossiper) {
 
 	// store chunks to disk
 	writeChunksToDisk(*chunks, g.Parameters.ChunksDirectory, filename)
-	fmt.Println("Stored file with metahash :", str)
+
+	g.standardOutputQueue <- FileSubmissionDone(metahash)
 }
 
 // File request : the client requests a file to be downloaded
@@ -245,7 +241,6 @@ func processFileRequest(filereq *common.FileRequest, g *Gossiper) {
 			// }
 		}
 	*/
-	fmt.Println("this is a request for hash : ", req.HashValue)
 
 	// otherwise, start the download process
 	go startDownload(g, filereq)

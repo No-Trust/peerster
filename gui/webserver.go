@@ -196,7 +196,7 @@ func newFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filename := webm.Filename
-	fmt.Println("*** file : ", filename)
+	fmt.Println("*** FILE SUBMISSION : ", filename)
 
 	outputQueue <- &common.ClientPacket{
 		NewFile: &common.NewFile{filename},
@@ -212,7 +212,9 @@ func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	hexhash := webm.Hexhash
 	destination := webm.Destination
 	filename := webm.Filename
-	fmt.Println("*** Requesting file :", filename, hexhash)
+
+	fmt.Println("*** FILE REQUEST :", filename, hexhash)
+
 	// hex -> []byte
 	metahash, err := hex.DecodeString(hexhash)
 	if err != nil {
@@ -237,7 +239,7 @@ func addNodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	node := webm.Node
 
-	fmt.Println("Received add node request : ", node)
+	fmt.Println("*** NEW NODE REQUEST : ", node)
 
 	nodeAddr, err := net.ResolveUDPAddr("udp4", node)
 	if err != nil {
@@ -256,9 +258,7 @@ func addNodeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Body)
 	webm := parse(r)
-	fmt.Println(webm)
 	if webm == nil {
 		return
 	}
@@ -269,7 +269,7 @@ func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if dest != "" {
 		// private message
 
-		fmt.Printf("Sending to %s, %s\n", dest, msgText)
+		fmt.Printf("*** PRIVATE to %s contents %s\n", dest, msgText)
 
 		// sending
 
@@ -282,7 +282,7 @@ func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 
-		fmt.Printf("Sending to all, %s\n", msgText)
+		fmt.Printf("*** MESSAGE to all contents %s\n", msgText)
 
 		// sending
 		outputQueue <- &common.ClientPacket{
