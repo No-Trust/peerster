@@ -4,10 +4,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/No-Trust/peerster/common"
 	"github.com/dedis/protobuf"
 	"net"
-	"fmt"
 	"sync"
 )
 
@@ -44,7 +44,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		peerSet:             peerSet,
 		vectorClock:         *NewStatusPacket(peerSet.ToPeerArray(), parameters.Identifier),
 		messages:            Messages{make(map[string]map[uint32]RumorMessage), &sync.Mutex{}},
-		gossiperWaiters:     make(map[string]chan *PeerStatus),
+		gossiperWaiters:     make(map[string]chan *PeerStatus, channelSize),
 		waitersMutex:        &sync.Mutex{},
 		fileWaiters:         make(map[string]chan *DataReply),
 		fileWaitersMutex:    &sync.Mutex{},

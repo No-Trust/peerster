@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/No-Trust/peerster/common"
 	"time"
 )
@@ -54,9 +53,10 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			// timer stops first
 			// timeout
 			timer.Stop()
-			close(statusChannel)
 			g.waitersMutex.Lock()
+			close(statusChannel)
 			g.gossiperWaiters[ackID] = nil
+			delete(g.gossiperWaiters, ackID)
 			g.waitersMutex.Unlock()
 			nextDestPeer := g.peerSet.RandomPeer()
 			if destPeer != nil {
@@ -65,10 +65,11 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			return
 		case <-statusChannel:
 			// received the ack before timeout
-			fmt.Println("@-@-@-@-@-@-@")
 			timer.Stop()
-			close(statusChannel)
 			g.waitersMutex.Lock()
+			close(statusChannel)
+			g.gossiperWaiters[ackID] = nil
+			delete(g.gossiperWaiters, ackID)
 			g.gossiperWaiters[ackID] = nil
 			g.waitersMutex.Unlock()
 			// rumormonger again with probability 1/2
