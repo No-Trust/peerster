@@ -18,7 +18,8 @@ func antiEntropy(g *Gossiper, etimer uint, wg sync.WaitGroup) {
 		A := g.peerSet.RandomPeer()
 		if A != nil {
 			// send status packet
-			status := &g.vectorClock
+
+			status := g.vectorClock.Copy()
 			g.standardOutputQueue <- status.AntiEntropyString(&A.Address)
 
 			g.gossipOutputQueue <- &Packet{

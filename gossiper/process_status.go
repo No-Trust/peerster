@@ -25,13 +25,17 @@ func (g *Gossiper) processStatus(status *StatusPacket, remoteaddr *net.UDPAddr) 
 
 		g.waitersMutex.Lock()
 		c, present := g.gossiperWaiters[ackID]
-		g.waitersMutex.Unlock()
-		if present {
+		if present && c != nil {
 			// this is an ack
 			// there is a goroutine waiting for this status message
 			// so send the status to the goroutine via channel
-			c <- &peerstatus
+			select {
+			case c <- &peerstatus:
+			default:
+			}
 		}
+		g.waitersMutex.Unlock()
+
 	}
 
 	// in any case, compare state and proceed accordingly
@@ -67,7 +71,6 @@ func (g *Gossiper) compareStateAndProcess(rumor *RumorMessage, status *StatusPac
 		// send status
 		g.gossipOutputQueue <- &Packet{
 			GossipPacket: GossipPacket{
-				Rumor:  nil,
 				Status: cpy,
 			},
 			Destination: destPeer.Address,

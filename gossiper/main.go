@@ -106,8 +106,8 @@ func main() {
 // from array of string ip:port return the array of UDPAddr
 func parsePeers(args []string) []net.UDPAddr {
 	// parses slice of strings of the form ip:port into slice of UDPAddr
-	peers := make([]net.UDPAddr, len(args))
-	for i, v := range args {
+	peers := make([]net.UDPAddr, 0)
+	for _, v := range args {
 		ipS, portS, err := net.SplitHostPort(v)
 		common.CheckRead(err)
 		port, err := strconv.Atoi(portS)
@@ -117,7 +117,7 @@ func parsePeers(args []string) []net.UDPAddr {
 			common.CheckRead(errors.New("ip address must be correct"))
 		}
 		var newPeer net.UDPAddr = net.UDPAddr{ip, port, ""}
-		peers[i] = newPeer
+		peers = append(peers, newPeer)
 	}
 	return peers
 }

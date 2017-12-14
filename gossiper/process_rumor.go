@@ -108,12 +108,12 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 
 	if rumor.isRoute() {
 		// forward to all peers
-		//go rumor.broadcastTo(g, otherPeers)
+		go rumor.broadcastTo(g, otherPeers)
 
-		destPeer := (&otherPeers).RandomPeer()
-		if destPeer != nil {
-			go g.rumormonger(rumor, destPeer)
-		}
+		// destPeer := (&otherPeers).RandomPeer()
+		// if destPeer != nil {
+		// 	go g.rumormonger(rumor, destPeer)
+		// }
 
 	} else {
 		// start rumormongering

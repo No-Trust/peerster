@@ -5,6 +5,7 @@ import (
 	"github.com/No-Trust/peerster/common"
 	"net"
 	"sync"
+	"fmt"
 )
 
 /*
@@ -115,8 +116,8 @@ func (sp *StatusPacket) GetIndex(i int) PeerStatus {
 func (sp *StatusPacket) Copy() *StatusPacket {
 	// return a copy of the statuspacket
 
-	var Wantcopy []PeerStatus
 	sp.mutex.Lock()
+	Wantcopy := make([]PeerStatus, len(sp.Want))
 	copy(Wantcopy, sp.Want)
 	sp.mutex.Unlock()
 	spc := StatusPacket{
@@ -177,18 +178,28 @@ func (sp *StatusPacket) Add(identifier string) {
 func NewStatusPacket(peers []common.Peer, identifier string) *StatusPacket {
 	var Want []PeerStatus
 
-	// Adding peers clocks
-	for _, peer := range peers {
-		Want = append(Want, PeerStatus{
-			Identifier: peer.Identifier,
-			NextID:     1,
-		})
-	}
+	// // Adding peers clocks
+	// for _, peer := range peers {
+	// 	Want = append(Want, PeerStatus{
+	// 		Identifier: peer.Identifier,
+	// 		NextID:     1,
+	// 	})
+	// }
 	// Adding its own clock
 	Want = append(Want, PeerStatus{
 		Identifier: identifier,
 		NextID:     1,
 	})
+	sp := StatusPacket{Want, &sync.Mutex{}}
+	return &sp
+}
 
-	return &StatusPacket{Want, &sync.Mutex{}}
+func (sp *StatusPacket) String() string {
+	sp.mutex.Lock()
+	str := ""
+	for _, status := range sp.Want {
+		str += fmt.Sprintf("id: %s, next msg: %d \n", status.Identifier, status.NextID)
+	}
+	sp.mutex.Unlock()
+	return str
 }
