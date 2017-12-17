@@ -22,4 +22,5 @@ type Parameters struct {
 	FilesDirectory  string      // path to store the files
 	ChunksDirectory string      // path to store the chunks
 	HashLength      uint        // length of the hashes in bits
+	KeyFileName     string      // filename of stored key
 }
