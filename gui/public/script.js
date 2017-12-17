@@ -16,11 +16,18 @@ const LEFT_PANE_LIST   = document.getElementById('left-pane-list');
 const LEFT_PANE_INPUT  = document.getElementById('left-pane-input');
 const LEFT_PANE_BUTTON = document.getElementById('left-pane-button');
 
-const MESSAGE_LIST          = document.getElementById('message-list');
-const MESSAGE_INPUT         = document.getElementById('message-input');
-const FILE_INPUT            = document.getElementById('file-input');
-const MESSAGE_ATTACH_BUTTON = document.getElementById('message-attach-button');
-const MESSAGE_SEND_BUTTON   = document.getElementById('message-send-button');
+const MESSAGE_LIST            = document.getElementById('message-list');
+const MESSAGE_INPUT           = document.getElementById('message-input');
+const FILE_INPUT              = document.getElementById('file-input');
+const MESSAGE_ATTACH_BUTTON   = document.getElementById('message-attach-button');
+const MESSAGE_SEND_BUTTON     = document.getElementById('message-send-button');
+const MESSAGE_DOWNLOAD_BUTTON = document.getElementById('message-download-button');
+
+const DOWNLOAD_DIALOG_CONTAINER      = document.getElementById('download-dialog-container');
+const DOWNLOAD_DIALOG_FILENAME_INPUT = document.getElementById('download-dialog-filename-input');
+const DOWNLOAD_DIALOG_HEXHASH_INPUT  = document.getElementById('download-dialog-hexhash-input');
+const DOWNLOAD_DIALOG_DEST_INPUT     = document.getElementById('download-dialog-dest-input');
+const DOWNLOAD_DIALOG_BUTTON         = document.getElementById('download-dialog-button');
 
 const LEFT_PANE_INPUT_PLACEHOLDERS = Object.freeze({
     ENTER_NAME : 'Enter a name',
@@ -44,7 +51,7 @@ let knownPeers = [];
 
 // Known origins
 let chats = [
-    'Rumor chat-room'
+    'Chat-room'
 ];
 
 // Rumors and Messages
@@ -269,6 +276,18 @@ function switchToTextMode() {
 
 }
 
+function showDownloadDialog() {
+
+    DOWNLOAD_DIALOG_CONTAINER.style.setProperty('display', 'inline');
+
+}
+
+function hideDownloadDialog() {
+
+    DOWNLOAD_DIALOG_CONTAINER.style.setProperty('display', 'none');
+
+}
+
 /*
     GETters
 */
@@ -421,17 +440,20 @@ function postPeer() {
 
 function postDownload() {
 
-    // TODO
-    let hexhash, destination, filename;
+    let filename    = DOWNLOAD_DIALOG_FILENAME_INPUT.value;
+    let hexhash     = DOWNLOAD_DIALOG_HEXHASH_INPUT.value;
+    let destination = DOWNLOAD_DIALOG_DEST_INPUT.value;
 
-    fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/download`, {
-        method : 'POST',
-        body   : JSON.stringify({
-            "hexhash"     : hexhash,
-            "destination" : destination,
-            "filename"    : filename
-        })
-    });
+    if ((filename !== '') && (hexhash !== '') && (destination !== '')) {
+        fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/download`, {
+            method : 'POST',
+            body   : JSON.stringify({
+                "filename"    : filename,
+                "hexhash"     : hexhash,
+                "destination" : destination
+            })
+        });
+    }
 
 }
 
@@ -511,6 +533,13 @@ MESSAGE_SEND_BUTTON.addEventListener('click', event => {
     }
 
 });
+
+MESSAGE_DOWNLOAD_BUTTON.addEventListener('click', showDownloadDialog);
+
+Array.from(document.getElementsByClassName('dialog-dark-backgrounds'))
+    .forEach(background => background.addEventListener('click', hideDownloadDialog));
+
+DOWNLOAD_DIALOG_BUTTON.addEventListener('click', postDownload);
 
 /*
     Execution

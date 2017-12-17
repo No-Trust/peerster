@@ -202,6 +202,11 @@ body {
     margin: 3px 10px 5px 10px;
 }
 
+#message-input-container {
+    position: relative;
+    width: 100%;
+}
+
 #message-input-container > * {
     --margin: 8px;
     --height: calc(var(--message-input-height) - 2 * var(--margin));
@@ -229,7 +234,6 @@ body {
 }
 
 #file-input {
-    /*visibility: hidden;*/
     display: none;
 }
 
@@ -254,4 +258,69 @@ body {
     width: 5vw;
     
     line-height: var(--height);
+}
+
+#message-download-button {
+    right: 0;
+    width: 5vw;
+    
+    color: #777;
+    line-height: var(--height);
+    
+    background-color: #2e3032;
+}
+
+/*
+    Dialog
+*/
+
+.dialog-dark-backgrounds {
+    position: fixed;
+    height: 100vh;
+    width: 100vw;
+    
+    background-color: #000;
+    
+    opacity: 0.7;
+}
+
+.dialogs {
+    position: fixed;
+    top: 10vw;
+    left: 30vw;
+    height: 30vw;
+    width: 40vw;
+    border-radius: 2vw;
+    
+    background-color: #222426;
+}
+
+#download-dialog-container {
+    display: none;
+}
+
+#download-dialog > * {
+    position: relative;
+    border-radius: 5px;
+    
+    font-size: 18px;
+}
+
+#download-dialog > .inputs {
+    left: 2.5vw;
+    height: 3.5vw;
+    width: 35vw;
+    margin-top: 2.5vw;
+    padding: 0 0 0 10px;
+    
+    font-size: 18px;
+    
+    background-color: #2e3032;
+}
+
+#download-dialog-button {
+    left: 14vw;
+    height: 4vw;
+    width: 12vw;
+    margin-top: 2.5vw;
 }
