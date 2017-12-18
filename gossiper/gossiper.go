@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"github.com/No-Trust/peerster/common"
+	"github.com/No-Trust/peerster/reputation"
 	"github.com/dedis/protobuf"
 	"net"
 	"sync"
@@ -25,11 +26,12 @@ type Gossiper struct {
 	waitersMutex        *sync.Mutex
 	fileWaiters         map[string]chan *DataReply // goroutines waiting for a data reply
 	fileWaitersMutex    *sync.Mutex
-	standardOutputQueue chan *string   // output queue for the standard output
-	routingTable        RoutingTable   // routing table
-	metadataSet         MetadataSet    // file metadatas
-	FileDownloads       FileDownloads  // file downloads : file that are being downloaded
-	key                 rsa.PrivateKey // private key / public key of this gossiper
+	standardOutputQueue chan *string    // output queue for the standard output
+	routingTable        RoutingTable    // routing table
+	metadataSet         MetadataSet     // file metadatas
+	FileDownloads       FileDownloads   // file downloads : file that are being downloaded
+	key                 rsa.PrivateKey  // private key / public key of this gossiper
+	reputationTable     ReputationTable // Reputation table
 }
 
 // Create a new Gossiper
