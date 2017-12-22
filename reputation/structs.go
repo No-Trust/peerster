@@ -1,10 +1,14 @@
 package reputation
 
+import (
+  "sync"
+)
+
 /*
-    Type definitions
+   Type definitions
 */
 
-type ReputationTable {
-    Reputations  map[string]float32
-    mutex        *sync.Mutex
+type ReputationTable struct {
+	Reputations map[string]float32
+	mutex       *sync.Mutex
 }
