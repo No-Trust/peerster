@@ -39,7 +39,7 @@ func create(keyRecord KeyRecord, ownPrivateKey rsa.PrivateKey, origin string) Ke
 	str := fmt.Sprintf("%v", keyRecord)
 	data := []byte(str)
 
-  hash := crypto.SHA256
+	hash := crypto.SHA256
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
