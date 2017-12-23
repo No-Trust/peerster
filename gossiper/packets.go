@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 	"fmt"
+	"github.com/No-Trust/peerster/awot"
 )
 
 /*
@@ -79,6 +80,7 @@ type GossipPacket struct {
 	Private     *PrivateMessage
 	DataRequest *DataRequest
 	DataReply   *DataReply
+	KeyExchange *awot.KeyExchangeMessage
 }
 
 type Packet struct {

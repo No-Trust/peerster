@@ -98,3 +98,8 @@ func FileSubmissionDone(metahash []byte) *string {
 	str := fmt.Sprintf("CLIENT FILE ACCEPTED metahash %s", hex.EncodeToString(metahash))
 	return &str
 }
+
+func KeyExchangeSendString(owner string, dest net.UDPAddr) *string {
+	str := fmt.Sprintf("KEY EXCHANGE MESSAGE SENT owner %s to %s:%s", owner, dest.IP.String(), strconv.Itoa(dest.Port))
+	return &str
+}

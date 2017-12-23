@@ -7,6 +7,31 @@ import (
 	"testing"
 )
 
+
+func BenchmarkSigning(t *testing.B) {
+	keyA, err := rsa.GenerateKey(rand.Reader, 4096)
+
+	if err != nil {
+		t.Errorf("Could not create private key")
+	}
+
+	keyB, err := rsa.GenerateKey(rand.Reader, 4096)
+
+	if err != nil {
+		t.Errorf("Could not create private key")
+	}
+
+	record := KeyRecord{
+		Owner:  "peerB",
+		KeyPub: keyB.PublicKey,
+	}
+
+	// n := 50
+	for i := 0; i < t.N; i++ {
+		_ = create(record, *keyA, "peerA")
+	}
+}
+
 // Generates key for A and B
 // Create KeyExchangeMessage by A singing B's public key
 // And verify that the signature is correct
