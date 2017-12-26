@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/No-Trust/peerster/awot"
 	"github.com/No-Trust/peerster/common"
-	"github.com/No-Trust/peerster/reputation"
+	"github.com/No-Trust/peerster/rep"
 	"github.com/dedis/protobuf"
 	"net"
 	"sync"
@@ -33,7 +33,7 @@ type Gossiper struct {
 	FileDownloads       FileDownloads              // file downloads : file that are being downloaded
 	key                 rsa.PrivateKey             // private key / public key of this gossiper
 	keyTable            awot.KeyTable              // table of records public key - peers with confidence level
-	reputationTable     reputation.ReputationTable // Reputation table
+	reputationTable     rep.ReputationTable // Reputation table
 }
 
 // Create a new Gossiper
@@ -59,6 +59,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 		key:                 getKey(parameters.KeyFileName),
+		reputationTable:     rep.NewReputationTable(&peerSet),
 		keyTable:            awot.NewKeyTable(),
 	}
 	return &gossiper
