@@ -5,15 +5,19 @@ package rep
 */
 
 import (
+
   "sync"
+
+  "github.com/No-Trust/peerster/common"
+
 )
 
 /*
-   Type definitions
+    Type definitions
 */
 
 type ReputationTable struct {
-	sigReps     map[string]float32
-	contribReps map[string]float32
+	sigReps     map[*common.Peer]float32
+	contribReps map[*common.Peer]float32
 	mutex       *sync.Mutex
 }

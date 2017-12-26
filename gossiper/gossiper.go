@@ -57,7 +57,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 		key:                 getKey(parameters.KeyFileName),
-		reputationTable:     rep.NewReputationTable(),
+		reputationTable:     rep.NewReputationTable(&peerSet),
 	}
 	return &gossiper
 }
