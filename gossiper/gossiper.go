@@ -7,7 +7,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"github.com/No-Trust/peerster/common"
-	"github.com/No-Trust/peerster/reputation"
+	"github.com/No-Trust/peerster/rep"
 	"github.com/dedis/protobuf"
 	"net"
 	"sync"
@@ -31,7 +31,7 @@ type Gossiper struct {
 	metadataSet         MetadataSet     // file metadatas
 	FileDownloads       FileDownloads   // file downloads : file that are being downloaded
 	key                 rsa.PrivateKey  // private key / public key of this gossiper
-	reputationTable     ReputationTable // Reputation table
+	reputationTable     rep.ReputationTable // Reputation table
 }
 
 // Create a new Gossiper

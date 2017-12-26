@@ -1,4 +1,8 @@
-package reputation
+package rep
+
+/*
+    Imports
+*/
 
 import (
   "sync"
@@ -9,6 +13,7 @@ import (
 */
 
 type ReputationTable struct {
-	Reputations map[string]float32
+	sigReps     map[string]float32
+	contribReps map[string]float32
 	mutex       *sync.Mutex
 }
