@@ -29,6 +29,7 @@ func main() {
 
 	rtimer := flag.Uint("rtimer", 60, "timer duration for the sending of route rumors")
 	etimer := flag.Uint("etimer", 2, "timer duration for the sending of anti entropy status")
+	ktimer := flag.Uint("ktimer", 2, "timer duration for key exchange")
 	noforward := flag.Bool("noforward", false, "for testing : forwarding of route rumors only")
 	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
 
@@ -84,6 +85,7 @@ func main() {
 		Name:            *name,
 		Etimer:          *etimer,
 		Rtimer:          *rtimer,
+		Ktimer:          *ktimer,
 		Hoplimit:        HOP_LIMIT,
 		NoForward:       *noforward,
 		NatTraversal:    *nat_traversal,

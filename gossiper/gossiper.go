@@ -32,7 +32,7 @@ type Gossiper struct {
 	metadataSet         MetadataSet                // file metadatas
 	FileDownloads       FileDownloads              // file downloads : file that are being downloaded
 	key                 rsa.PrivateKey             // private key / public key of this gossiper
-	KeyTable            awot.KeyTable              // table of records public key - peers with confidence level
+	keyTable            awot.KeyTable              // table of records public key - peers with confidence level
 	reputationTable     reputation.ReputationTable // Reputation table
 }
 
@@ -59,7 +59,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 		key:                 getKey(parameters.KeyFileName),
-		KeyTable:						 awot.NewKeyTable(),
+		keyTable:            awot.NewKeyTable(),
 	}
 	return &gossiper
 }
@@ -67,7 +67,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 // Start the Gossiper
 func (g *Gossiper) Start() {
 	var wg sync.WaitGroup
-	wg.Add(7)
+	wg.Add(8)
 
 	// Standard output writer Thread
 	go fmtwriter(g.standardOutputQueue, wg)
@@ -83,7 +83,12 @@ func (g *Gossiper) Start() {
 	go antiEntropy(g, g.Parameters.Etimer, wg)
 	// Route Rumor Sender thread
 	go routerumor(g, g.Parameters.Rtimer, wg)
-
+	/*
+	go func() {
+		defer wg.Done()
+		keyExchanger(g, g.Parameters.Ktimer)
+	}()
+	*/
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
 
@@ -130,6 +135,10 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 	if pkt.DataReply != nil {
 		// process data reply
 		go g.processDataReply(pkt.DataReply, remoteaddr)
+	}
+	if pkt.KeyExchange != nil {
+		// process key exchange message
+		go g.processKeyExchangeMessage(*pkt.KeyExchange, remoteaddr)
 	}
 
 	return

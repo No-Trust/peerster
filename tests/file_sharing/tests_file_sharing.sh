@@ -73,6 +73,8 @@ startGossip peer0 5000 10000
 startGossip peer1 5001 10001
 startGossip peer2 5002 10002
 
+sleep 8
+
 # submit file1.txt and file3.jpg to peer0
 echo -e "${GREEN}peer0 is given file1 and file3${NC}"
 ./cli -UIPort=10000 -file=$file1

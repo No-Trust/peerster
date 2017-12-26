@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func BenchmarkSigning(t *testing.B) {
 	keyA, err := rsa.GenerateKey(rand.Reader, 4096)
 
@@ -26,9 +25,8 @@ func BenchmarkSigning(t *testing.B) {
 		KeyPub: keyB.PublicKey,
 	}
 
-	// n := 50
 	for i := 0; i < t.N; i++ {
-		_ = create(record, *keyA, "peerA")
+		create(record, *keyA, "peerA")
 	}
 }
 
@@ -60,7 +58,7 @@ func TestKeyExchangeSigning(t *testing.T) {
 	msg := create(record, *keyA, A)
 
 	// check that the signature is correct
-	err = verify(msg, keyA.PublicKey)
+	err = Verify(msg, keyA.PublicKey)
 
 	if err != nil {
 		t.Errorf("Signature of message is wrong")

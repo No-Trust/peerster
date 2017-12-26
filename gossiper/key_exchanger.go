@@ -6,9 +6,6 @@ import (
 	"time"
 )
 
-// TODO : length of signature ?
-
-
 // Send fully trusted key records to a random neighbor each timer seconds
 // Send as many message as there are fully trusted key records
 func keyExchanger(g *Gossiper, timer uint) {
@@ -18,32 +15,29 @@ func keyExchanger(g *Gossiper, timer uint) {
 
 	for _ = range ticker.C {
 
-		// retrieve public keys
-		records := g.KeyTable.GetTrustedKeys()
+		// retrieve public keys and signatures
+		records := g.keyTable.GetTrustedKeys(g.key, g.Parameters.Name)
+
 
 		msgs := make([]awot.KeyExchangeMessage, len(records))
 
 		for i, rec := range records {
-			// sign the record if not yet signed
-			// rec.Sign(g.key, g.Parameters.Name)
-      // msgs[i] = rec.keyExchangeMessage
-      msgs[i] = rec.ExchangeMessage(g.key, g.Parameters.Name)
+			msgs[i] = *rec.GetMessage()
 		}
 
 		// send records to a random neighbor
 		A := g.peerSet.RandomPeer()
 
+		for _, msg := range msgs {
+			g.standardOutputQueue <- KeyExchangeSendString(msg.KeyRecord.Owner, A.Address)
 
-    for _, msg := range msgs {
-      g.standardOutputQueue <- KeyExchangeSendString(msg.KeyRecord.Owner, A.Address)
-
-      g.gossipOutputQueue <- &Packet{
-        GossipPacket: GossipPacket{
-          KeyExchange: &msg,
-        },
-        Destination: A.Address,
-      }
-    }
+			g.gossipOutputQueue <- &Packet{
+				GossipPacket: GossipPacket{
+					KeyExchange: &msg,
+				},
+				Destination: A.Address,
+			}
+		}
 
 	}
 

@@ -18,7 +18,7 @@ type KeyExchangeMessage struct {
 
 // Verifies that the received message is signed by the pretended origin
 // Return nil if valid, an error otherwise
-func verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
+func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
 	str := fmt.Sprintf("%v", msg.KeyRecord)
 	data := []byte(str)
 

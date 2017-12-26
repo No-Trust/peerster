@@ -21,16 +21,16 @@ type TrustedKeyRecord struct {
 }
 
 // Signs a TrustedKeyRecord if not yet signed
-func (rec *TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) {
-	if rec.keyExchangeMessage != nil {
+func (rec TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) TrustedKeyRecord {
+	if rec.keyExchangeMessage == nil {
 		msg := create(rec.record, priK, origin)
 		rec.keyExchangeMessage = &msg
 	}
+	return rec
 }
 
-func (rec *TrustedKeyRecord) ExchangeMessage(priK rsa.PrivateKey, origin string) KeyExchangeMessage {
-	rec.sign(priK, origin)
-	return *(rec.keyExchangeMessage)
+func (rec TrustedKeyRecord) GetMessage() *KeyExchangeMessage {
+	return rec.keyExchangeMessage
 }
 
 // A key database, a set of TrustedKeyRecord
@@ -53,21 +53,34 @@ func (table *KeyTable) Remove(owner string) {
 	table.mutex.Unlock()
 }
 
-// Return the key of peer with given name and true if it exists, otherwise return false
-func (table KeyTable) Get(name string) (rsa.PublicKey, bool) {
+// Return the record of peer with given name and true if it exists, otherwise return false
+func (table KeyTable) get(name string) (TrustedKeyRecord, bool) {
 	table.mutex.Lock()
 	r, present := table.db[name]
 	table.mutex.Unlock()
-	return r.record.KeyPub, present
+	return r, present
 }
 
-// Retrieve the keys with a confidence level of 100%
-func (table KeyTable) GetTrustedKeys() []TrustedKeyRecord {
+// Return the key of peer with given name and true if it exists, otherwise return false
+func (table KeyTable) GetKey(name string) (rsa.PublicKey, bool) {
+	rec, present := table.get(name)
+	return rec.record.KeyPub, present
+}
+
+// Retrieve the keys with a confidence level of >0%
+// If not yet signed, sign the keys
+func (table *KeyTable) GetTrustedKeys(priK rsa.PrivateKey, origin string) []TrustedKeyRecord {
 	r := make([]TrustedKeyRecord, 0)
 	table.mutex.Lock()
 
-	for _, val := range table.db {
-		if val.confidence >= 1.0 {
+	for i, val := range table.db {
+		if val.confidence > 0.0 {
+
+			// sign key
+			if val.keyExchangeMessage == nil {
+				table.db[i] = val.sign(priK, origin)
+			}
+
 			r = append(r, val)
 		}
 	}
