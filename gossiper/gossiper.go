@@ -141,6 +141,10 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		// process key exchange message
 		go g.processKeyExchangeMessage(*pkt.KeyExchange, remoteaddr)
 	}
+  if pkt.RepUpdate != nil {
+    // process reputation update
+    go g.reputationTable.UpdateReputations(pkt.RepUpdate, &A)
+  }
 
 	return
 }
