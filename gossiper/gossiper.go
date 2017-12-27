@@ -42,6 +42,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 	peerSet := common.NewSetFromAddrs(peerAddrs, parameters.GossipAddr)
 	channelSize := parameters.ChannelSize
 	metadataSet := NewMetadataSet()
+	key := getKey(parameters.PubKeyFileName, parameters.KeyFileName)
 	gossiper := Gossiper{
 		Parameters:          parameters,
 		gossipOutputQueue:   make(chan *Packet, channelSize),
@@ -58,9 +59,9 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		routingTable:        *NewRoutingTable(parameters.Identifier, UDPAddrToString(parameters.GossipAddr)),
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
-		key:                 getKey(parameters.KeyFileName),
+		key:                 key,
+		keyTable:            awot.NewKeyTable(parameters.Name, key.PublicKey),
 		reputationTable:     rep.NewReputationTable(&peerSet),
-		keyTable:            awot.NewKeyTable(),
 	}
 	return &gossiper
 }
@@ -84,12 +85,7 @@ func (g *Gossiper) Start() {
 	go antiEntropy(g, g.Parameters.Etimer, wg)
 	// Route Rumor Sender thread
 	go routerumor(g, g.Parameters.Rtimer, wg)
-	/*
-	go func() {
-		defer wg.Done()
-		keyExchanger(g, g.Parameters.Ktimer)
-	}()
-	*/
+
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
 
@@ -136,10 +132,6 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 	if pkt.DataReply != nil {
 		// process data reply
 		go g.processDataReply(pkt.DataReply, remoteaddr)
-	}
-	if pkt.KeyExchange != nil {
-		// process key exchange message
-		go g.processKeyExchangeMessage(*pkt.KeyExchange, remoteaddr)
 	}
 
 	return

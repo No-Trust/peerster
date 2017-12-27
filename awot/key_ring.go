@@ -26,8 +26,9 @@ type KeyRing struct {
 	mutex *sync.Mutex
 }
 
-func NewKeyRingWithIntroducers() {
-	// TODO
+// Create a new key-ring with given fully trusted origin-public key pairs
+func NewKeyRingWithIntroducers(name string, introducers []string) {
+	
 }
 
 // Add a Vertice to the Keyring with given name and probability

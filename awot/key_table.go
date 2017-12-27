@@ -7,32 +7,6 @@ import (
 	"sync"
 )
 
-// A key record, i.e. an association (public-key, owner)
-type KeyRecord struct {
-	Owner  string
-	KeyPub rsa.PublicKey
-}
-
-// A trusted key record, i.e. an association (public-keym owner) with a confidence level
-type TrustedKeyRecord struct {
-	record             KeyRecord           // the record publik key - owner
-	confidence         float32             // confidence level in the assocatiation owner - public key
-	keyExchangeMessage *KeyExchangeMessage // the key exchange message to be advertised by the gossiper
-}
-
-// Signs a TrustedKeyRecord if not yet signed
-func (rec TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) TrustedKeyRecord {
-	if rec.keyExchangeMessage == nil {
-		msg := create(rec.record, priK, origin)
-		rec.keyExchangeMessage = &msg
-	}
-	return rec
-}
-
-func (rec TrustedKeyRecord) GetMessage() *KeyExchangeMessage {
-	return rec.keyExchangeMessage
-}
-
 // A key database, a set of TrustedKeyRecord
 type KeyTable struct {
 	db    map[string]TrustedKeyRecord // owner name -> record
@@ -67,14 +41,14 @@ func (table KeyTable) GetKey(name string) (rsa.PublicKey, bool) {
 	return rec.record.KeyPub, present
 }
 
-// Retrieve the keys with a confidence level of >0%
+// Retrieve the keys with a confidence level of 100%
 // If not yet signed, sign the keys
 func (table *KeyTable) GetTrustedKeys(priK rsa.PrivateKey, origin string) []TrustedKeyRecord {
 	r := make([]TrustedKeyRecord, 0)
 	table.mutex.Lock()
 
 	for i, val := range table.db {
-		if val.confidence > 0.0 {
+		if val.confidence >= 1.0 {
 
 			// sign key
 			if val.keyExchangeMessage == nil {
@@ -89,9 +63,23 @@ func (table *KeyTable) GetTrustedKeys(priK rsa.PrivateKey, origin string) []Trus
 }
 
 // Create an empty KeyTable
-func NewKeyTable() KeyTable {
+func newKeyTable() KeyTable {
 	return KeyTable{
 		db:    make(map[string]TrustedKeyRecord),
 		mutex: &sync.Mutex{},
 	}
+}
+
+// Create a new KeyTable with own's key
+func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
+	table := newKeyTable()
+	table.Add(TrustedKeyRecord {
+		record: KeyRecord {
+			Owner: owner,
+			KeyPub: key,
+		},
+		confidence: 1.0, // confidence 100%
+	})
+
+	return table
 }

@@ -10,7 +10,7 @@ type Parameters struct {
 	Name            string      // name of this node
 	Etimer          uint        // rate of anti entropy
 	Rtimer          uint        // rate of route rumors
-	Ktimer					uint				// rate of key exchange messages
+	Ktimer          uint        // rate of key exchange messages
 	Hoplimit        uint32      // TTL for the sending of private messages
 	NoForward       bool        // for testing : if set, does not forward any packet except route rumors
 	NatTraversal    bool        // if set, activates the nat traversal option
@@ -24,4 +24,5 @@ type Parameters struct {
 	ChunksDirectory string      // path to store the chunks
 	HashLength      uint        // length of the hashes in bits
 	KeyFileName     string      // filename of stored key
+	PubKeyFileName  string      // filename of stored public key
 }

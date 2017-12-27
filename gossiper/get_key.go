@@ -5,15 +5,22 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/gob"
+	"encoding/pem"
 	"github.com/No-Trust/peerster/common"
 	"os"
+	"errors"
+	"fmt"
+	"io/ioutil"
 )
 
 var KEY_SIZE = 4096
 
 // Return the private key, either stored in disk with given filename, or a new one and write it to the disk under the given filename
-func getKey(filename string) rsa.PrivateKey {
+func getKey(pubKeyFilename, filename string) rsa.PrivateKey {
+
+	fmt.Println("GET KEY ", filename)
 
 	// check if file exists
 	if _, err := os.Stat(filename); err == nil {
@@ -22,6 +29,9 @@ func getKey(filename string) rsa.PrivateKey {
 		// decode
 		var key = new(rsa.PrivateKey)
 		err = load(filename, key)
+		common.CheckError(err)
+
+		err = savePublicKey(key.PublicKey, pubKeyFilename)
 		common.CheckError(err)
 
 		return *key
@@ -35,7 +45,34 @@ func getKey(filename string) rsa.PrivateKey {
 	err = save(filename, key)
 	common.CheckError(err)
 
+	err = savePublicKey(key.PublicKey, pubKeyFilename)
+	common.CheckError(err)
+
 	return *key
+}
+
+// Encode public key to pem and save it to file
+func savePublicKey(keypub rsa.PublicKey, filename string) error {
+	fmt.Println("SAVING TO ", filename)
+
+	// check if public key exists
+	if _, err := os.Stat(filename); err != nil {
+
+
+		PubASN1, err := x509.MarshalPKIXPublicKey(&keypub)
+		if err != nil {
+			return errors.New("could not marshal public key")
+		}
+
+		pubBytes := pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: PubASN1,
+		})
+
+		ioutil.WriteFile(filename, pubBytes, 0644)
+	}
+
+	return nil
 }
 
 // Encode via Gob to file

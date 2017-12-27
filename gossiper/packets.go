@@ -33,6 +33,7 @@ type RumorMessage struct {
 	Text     string
 	LastIP   *net.IP
 	LastPort *int
+	KeyExchange *awot.KeyExchangeMessage
 }
 
 type PeerStatus struct {
@@ -80,7 +81,6 @@ type GossipPacket struct {
 	Private     *PrivateMessage
 	DataRequest *DataRequest
 	DataReply   *DataReply
-	KeyExchange *awot.KeyExchangeMessage
 }
 
 type Packet struct {
@@ -91,7 +91,11 @@ type Packet struct {
 /***** Rumor Message *****/
 
 func (rumor *RumorMessage) isRoute() bool {
-	return rumor.Text == ""
+	return rumor.Text == "" && rumor.KeyExchange == nil
+}
+
+func (rumor *RumorMessage) isKeyExchange() bool {
+	return rumor.Text == "" && rumor.KeyExchange != nil
 }
 
 func (rumor *RumorMessage) isChat() bool {

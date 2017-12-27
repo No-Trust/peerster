@@ -17,7 +17,7 @@ const CHUNK_SIZE = 8000
 const FILES_DIR = "../_Downloads/"
 const CHUNKS_DIR = "../_Downloads/.Chunks/"
 const HASH_LENGTH = 256
-const KEY_FILE_NAME = "../private.key"
+const KEY_DIRECTORY = "../"
 
 // Main
 func main() {
@@ -98,7 +98,8 @@ func main() {
 		FilesDirectory:  FILES_DIR,
 		ChunksDirectory: CHUNKS_DIR,
 		HashLength:      HASH_LENGTH,
-		KeyFileName:     KEY_FILE_NAME,
+		KeyFileName:     KEY_DIRECTORY + "private.key",
+		PubKeyFileName:  KEY_DIRECTORY + identifier + ".pub",
 	}
 
 	var g *Gossiper = NewGossiper(parameters, peerAddrs)
