@@ -103,3 +103,13 @@ func KeyExchangeSendString(owner string, dest net.UDPAddr) *string {
 	str := fmt.Sprintf("KEY EXCHANGE MESSAGE SENT owner %s to %s:%s", owner, dest.IP.String(), strconv.Itoa(dest.Port))
 	return &str
 }
+
+func KeyExchangeReceiveString(owner string, from net.UDPAddr) *string {
+	str := fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s from %s:%s", owner, from.IP.String(), strconv.Itoa(from.Port))
+	return &str
+}
+
+func WrongSignatureString() *string {
+	str := fmt.Sprintf("WRONG SIGNATURE !")
+	return &str
+}

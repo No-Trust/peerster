@@ -17,7 +17,7 @@ const CHUNK_SIZE = 8000
 const FILES_DIR = "../_Downloads/"
 const CHUNKS_DIR = "../_Downloads/.Chunks/"
 const HASH_LENGTH = 256
-const KEY_FILE_NAME = "../private.key"
+const KEY_DIRECTORY = "../"
 
 // Main
 func main() {
@@ -32,7 +32,7 @@ func main() {
 	ktimer := flag.Uint("ktimer", 2, "timer duration for key exchange")
 	noforward := flag.Bool("noforward", false, "for testing : forwarding of route rumors only")
 	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
-
+	keysdir := flag.String("keys", ".", "directory for boostrap public keys")
 	flag.Parse()
 
 	fmt.Println("given peers :", *peers, "\n")
@@ -81,24 +81,26 @@ func main() {
 	common.CheckError(err)
 
 	parameters := Parameters{
-		Identifier:      identifier,
-		Name:            *name,
-		Etimer:          *etimer,
-		Rtimer:          *rtimer,
-		Ktimer:          *ktimer,
-		Hoplimit:        HOP_LIMIT,
-		NoForward:       *noforward,
-		NatTraversal:    *nat_traversal,
-		GossipAddr:      *gossipAddr,
-		GossipConn:      *gossipConn,
-		UIAddr:          *UIAddr,
-		UIConn:          *UIConn,
-		ChannelSize:     CHANNEL_SIZE,
-		ChunkSize:       CHUNK_SIZE,
-		FilesDirectory:  FILES_DIR,
-		ChunksDirectory: CHUNKS_DIR,
-		HashLength:      HASH_LENGTH,
-		KeyFileName:     KEY_FILE_NAME,
+		Identifier:           identifier,
+		Name:                 *name,
+		Etimer:               *etimer,
+		Rtimer:               *rtimer,
+		Ktimer:               *ktimer,
+		Hoplimit:             HOP_LIMIT,
+		NoForward:            *noforward,
+		NatTraversal:         *nat_traversal,
+		GossipAddr:           *gossipAddr,
+		GossipConn:           *gossipConn,
+		UIAddr:               *UIAddr,
+		UIConn:               *UIConn,
+		ChannelSize:          CHANNEL_SIZE,
+		ChunkSize:            CHUNK_SIZE,
+		FilesDirectory:       FILES_DIR,
+		ChunksDirectory:      CHUNKS_DIR,
+		HashLength:           HASH_LENGTH,
+		KeyFileName:          KEY_DIRECTORY + "private.key",
+		PubKeyFileName:       KEY_DIRECTORY + identifier + ".pub",
+		TrustedKeysDirectory: *keysdir,
 	}
 
 	var g *Gossiper = NewGossiper(parameters, peerAddrs)
