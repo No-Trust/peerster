@@ -43,31 +43,3 @@ func NewReputationTable(peerSet *common.PeerSet) ReputationTable {
   return table
 
 }
-
-// TODO: Find a cleaner way to return the result of the map access?!
-
-/**
- * Returns the signature-based reputation of the given peer.
- */
-func (table *ReputationTable) GetSigRep(peer *common.Peer) (/*rep*/ float32, /*ok*/ bool) {
-
-  // Get the reputation from the table
-  rep, ok := table.sigReps[peer]
-
-  // Return the reputation
-  return rep, ok
-
-}
-
-/**
- * Returns the contribution-based reputation of the given peer.
- */
-func (table *ReputationTable) GetContribRep(peer *common.Peer) (/*rep*/ float32, /*ok*/ bool) {
-
-  // Get the reputation from the table
-  rep, ok := table.contribReps[peer]
-
-  // Return the reputation
-  return rep, ok
-
-}
