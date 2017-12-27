@@ -1,6 +1,7 @@
 package awot
 
 import (
+	"crypto/rsa"
 	"errors"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/simple"
@@ -21,19 +22,84 @@ type Vertice struct {
 
 // Key Ring implementation
 type KeyRing struct {
-	ids   map[nodeName]Vertice
-	graph simple.DirectedGraph
-	mutex *sync.Mutex
+	ids      map[nodeName]Vertice
+	graph    simple.DirectedGraph
+	keyTable *KeyTable
+	mutex    *sync.Mutex
 }
 
 // Create a new key-ring with given fully trusted origin-public key pairs
-func NewKeyRingWithIntroducers(name string, introducers []string) {
-	
+func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []KeyRecord, keyTable *KeyTable) KeyRing {
+	// map
+	ids := make(map[nodeName]Vertice)
+	// create empty graph
+	graph := simple.NewDirectedGraph()
+
+	// add source to graph
+	source := graph.NewNode()
+	graph.AddNode(source)
+	// set id and name association in map
+	sourceV := Vertice{
+		name:        nodeName(owner),
+		id:          nodeId(source.ID()),
+		probability: 1.0,
+	}
+	ids[nodeName(owner)] = sourceV
+	// add key
+	keyTable.Add(TrustedKeyRecord{
+		record: KeyRecord{
+			Owner:  owner,
+			KeyPub: key,
+		},
+		confidence: 1.0,
+	})
+
+	// add each fully trusted key
+	for _, rec := range trustedRecords {
+		// add node to graph
+		node := graph.NewNode()
+		graph.AddNode(node)
+		// set id and name association in map
+		nodeV := Vertice{
+			name:        nodeName(rec.Owner),
+			id:          nodeId(node.ID()),
+			probability: 1.0,
+		}
+		ids[nodeName(rec.Owner)] = nodeV
+
+		// add edge from source to new node
+
+		// add edge from source
+		source := ids[nodeName(owner)]
+
+		graph.SetEdge(simple.Edge{F: simple.Node(source.id), T: simple.Node(nodeV.id)})
+
+		// add key
+		keyTable.Add(TrustedKeyRecord{
+			record: KeyRecord{
+				Owner:  rec.Owner,
+				KeyPub: rec.KeyPub,
+			},
+			confidence: 1.0,
+		})
+	}
+
+	ring := KeyRing{
+		ids:      ids,
+		graph:    *graph,
+		keyTable: keyTable,
+		mutex:    &sync.Mutex{},
+	}
+
+	ring.Save("NEW-RING.dot")
+
+	// return
+	return ring
 }
 
 // Add a Vertice to the Keyring with given name and probability
 // If the Vertice already exists, update its probability
-func (ring *KeyRing) AddNode(name string, probability float32) {
+func (ring *KeyRing) addNode(name string, probability float32) {
 	ring.mutex.Lock()
 	nodename := nodeName(name)
 	// check if already in KeyRing
@@ -57,7 +123,7 @@ func (ring *KeyRing) AddNode(name string, probability float32) {
 }
 
 // Add a directed edge between nodes named a and b, from a to b
-func (ring *KeyRing) AddEdge(a, b string) error {
+func (ring *KeyRing) addEdge(a, b string) error {
 	ring.mutex.Lock()
 
 	if _, aPresent := ring.ids[nodeName(a)]; !aPresent {
@@ -80,32 +146,6 @@ func (ring *KeyRing) AddEdge(a, b string) error {
 	ring.graph.SetEdge(simple.Edge{F: simple.Node(vA.id), T: simple.Node(vB.id)})
 	ring.mutex.Unlock()
 	return nil
-}
-
-// Create an basic Key Ring, with only the source as node
-func NewKeyRing(sourceName nodeName) KeyRing {
-	// map
-	ids := make(map[nodeName]Vertice)
-	// create empty graph
-	graph := simple.NewDirectedGraph()
-	// add source to graph
-	source := graph.NewNode()
-	graph.AddNode(source)
-
-	// set id and name association in map
-	sourceV := Vertice{
-		name:        sourceName,
-		id:          nodeId(source.ID()),
-		probability: 1.0,
-	}
-	ids[sourceName] = sourceV
-
-	// return
-	return KeyRing{
-		ids:   ids,
-		graph: *graph,
-		mutex: &sync.Mutex{},
-	}
 }
 
 // Marshal the graph and write to file in dot format

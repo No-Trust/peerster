@@ -46,7 +46,7 @@ startGossip(){
 	# delete log
 	rm -f *.log
 	# launch gossiper
-	./gossiper -gossipAddr=127.0.0.1:$port -UIPort=$uiport -name=$name $peers> $name.log &
+	./gossiper -gossipAddr=127.0.0.1:$port -UIPort=$uiport -name=$name $peers> $name.log -keys="../../keys/"&
 	cd ../..
 
 	# don't show 'killed by signal'-messages
@@ -60,9 +60,9 @@ startGossip peer2 5002 10002
 sleep 10
 killall gossiper
 
-cp peer0/peer0.pub .
-cp peer1/peer1.pub .
-cp peer2/peer2.pub .
+cp peer0/peer0.pub keys/
+cp peer1/peer1.pub keys/
+cp peer2/peer2.pub keys/
 
 #testing
 fail(){

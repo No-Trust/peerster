@@ -83,3 +83,26 @@ func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
 
 	return table
 }
+
+func NewKeyTableWithIntroducers(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) KeyTable {
+	table := newKeyTable()
+	table.Add(TrustedKeyRecord {
+		record: KeyRecord {
+			Owner: owner,
+			KeyPub: key,
+		},
+		confidence: 1.0, // confidence 100%
+	})
+
+	for _, rec := range trustedRecords {
+		table.Add(TrustedKeyRecord {
+			record: KeyRecord {
+				Owner: rec.Owner,
+				KeyPub: rec.KeyPub,
+			},
+			confidence: 1.0, // confidence 100%
+		})
+	}
+
+	return table
+}

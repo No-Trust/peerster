@@ -27,13 +27,15 @@ type Gossiper struct {
 	waitersMutex        *sync.Mutex
 	fileWaiters         map[string]chan *DataReply // goroutines waiting for a data reply
 	fileWaitersMutex    *sync.Mutex
-	standardOutputQueue chan *string               // output queue for the standard output
-	routingTable        RoutingTable               // routing table
-	metadataSet         MetadataSet                // file metadatas
-	FileDownloads       FileDownloads              // file downloads : file that are being downloaded
-	key                 rsa.PrivateKey             // private key / public key of this gossiper
-	keyTable            awot.KeyTable              // table of records public key - peers with confidence level
+	standardOutputQueue chan *string        // output queue for the standard output
+	routingTable        RoutingTable        // routing table
+	metadataSet         MetadataSet         // file metadatas
+	FileDownloads       FileDownloads       // file downloads : file that are being downloaded
+	key                 rsa.PrivateKey      // private key / public key of this gossiper
+	keyTable            awot.KeyTable       // table of records public key - peers with confidence level
 	reputationTable     rep.ReputationTable // Reputation table
+	trustedKeys         []awot.KeyRecord    // fully trusted keys, bootstrap of awot
+	keyRing             awot.KeyRing				// key ring of awot
 }
 
 // Create a new Gossiper
@@ -43,6 +45,8 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 	channelSize := parameters.ChannelSize
 	metadataSet := NewMetadataSet()
 	key := getKey(parameters.PubKeyFileName, parameters.KeyFileName)
+	keyTable := awot.NewKeyTable(parameters.Name, key.PublicKey)
+	trustedKeys := getPublicKeysFromDirectory(parameters.TrustedKeysDirectory, parameters.Identifier)
 	gossiper := Gossiper{
 		Parameters:          parameters,
 		gossipOutputQueue:   make(chan *Packet, channelSize),
@@ -60,8 +64,10 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 		key:                 key,
-		keyTable:            awot.NewKeyTable(parameters.Name, key.PublicKey),
+		keyTable:            keyTable,
 		reputationTable:     rep.NewReputationTable(&peerSet),
+		trustedKeys:         trustedKeys,
+		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys, &keyTable),
 	}
 	return &gossiper
 }

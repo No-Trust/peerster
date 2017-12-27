@@ -8,11 +8,13 @@ import (
 	"crypto/x509"
 	"encoding/gob"
 	"encoding/pem"
-	"github.com/No-Trust/peerster/common"
-	"os"
 	"errors"
-	"fmt"
+	"github.com/No-Trust/peerster/awot"
+	"github.com/No-Trust/peerster/common"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 var KEY_SIZE = 4096
@@ -20,15 +22,13 @@ var KEY_SIZE = 4096
 // Return the private key, either stored in disk with given filename, or a new one and write it to the disk under the given filename
 func getKey(pubKeyFilename, filename string) rsa.PrivateKey {
 
-	fmt.Println("GET KEY ", filename)
-
 	// check if file exists
 	if _, err := os.Stat(filename); err == nil {
 		// key exists in disk
 
 		// decode
 		var key = new(rsa.PrivateKey)
-		err = load(filename, key)
+		err = loadGob(filename, key)
 		common.CheckError(err)
 
 		err = savePublicKey(key.PublicKey, pubKeyFilename)
@@ -42,7 +42,7 @@ func getKey(pubKeyFilename, filename string) rsa.PrivateKey {
 	common.CheckError(err)
 
 	// save to disk
-	err = save(filename, key)
+	err = saveGob(filename, key)
 	common.CheckError(err)
 
 	err = savePublicKey(key.PublicKey, pubKeyFilename)
@@ -51,13 +51,65 @@ func getKey(pubKeyFilename, filename string) rsa.PrivateKey {
 	return *key
 }
 
+// Construct a list of keyrecords from a directory where public keys are stored
+// Implicitely the name of the owner of each public key is the file name (without .pem extension)
+func getPublicKeysFromDirectory(dir string, except string) []awot.KeyRecord {
+	records := make([]awot.KeyRecord, 0)
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return records
+	}
+
+	for _, f := range files {
+
+		extension := filepath.Ext(f.Name())
+		if extension != ".pub" {
+			continue
+		}
+
+		// get name without suffix
+		name := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
+		// do not add source key
+		if name != except {
+			// read file
+			pubBytes, err := ioutil.ReadFile(dir + f.Name())
+			common.CheckError(err)
+
+			pemBlock, _ := pem.Decode(pubBytes)
+
+			if pemBlock != nil {
+				keypub, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
+				common.CheckError(err)
+
+				original, ok := keypub.(*rsa.PublicKey)
+
+				if ok {
+					// good format
+
+					// construct record using name of file as owner
+					record := awot.KeyRecord{
+						Owner:  name,
+						KeyPub: 	*original,
+					}
+
+					// add record
+					records = append(records, record)
+				}
+			}
+		}
+	}
+
+	// fmt.Println("RECORDS")
+	// fmt.Println(records)
+	return records
+}
+
 // Encode public key to pem and save it to file
 func savePublicKey(keypub rsa.PublicKey, filename string) error {
-	fmt.Println("SAVING TO ", filename)
 
 	// check if public key exists
 	if _, err := os.Stat(filename); err != nil {
-
 
 		PubASN1, err := x509.MarshalPKIXPublicKey(&keypub)
 		if err != nil {
@@ -76,7 +128,7 @@ func savePublicKey(keypub rsa.PublicKey, filename string) error {
 }
 
 // Encode via Gob to file
-func save(path string, object interface{}) error {
+func saveGob(path string, object interface{}) error {
 	file, err := os.Create(path)
 	if err == nil {
 		encoder := gob.NewEncoder(file)
@@ -87,7 +139,7 @@ func save(path string, object interface{}) error {
 }
 
 // Decode Gob file
-func load(path string, object interface{}) error {
+func loadGob(path string, object interface{}) error {
 	file, err := os.Open(path)
 	if err == nil {
 		decoder := gob.NewDecoder(file)
