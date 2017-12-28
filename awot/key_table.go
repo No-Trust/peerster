@@ -14,17 +14,31 @@ type KeyTable struct {
 }
 
 // Add a record to the key table, overwrites it if it already exists
-func (table *KeyTable) Add(rec TrustedKeyRecord) {
+func (table *KeyTable) add(rec TrustedKeyRecord) {
 	table.mutex.Lock()
 	table.db[rec.record.Owner] = rec
 	table.mutex.Unlock()
 }
 
 // Remove a record for given key owner
-func (table *KeyTable) Remove(owner string) {
+func (table *KeyTable) remove(owner string) {
 	table.mutex.Lock()
 	delete(table.db, owner)
 	table.mutex.Unlock()
+}
+
+// Create a new KeyTable with own's key
+func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
+	table := newKeyTable()
+	table.add(TrustedKeyRecord {
+		record: KeyRecord {
+			Owner: owner,
+			KeyPub: key,
+		},
+		confidence: 1.0, // confidence 100%
+	})
+
+	return table
 }
 
 // Return the record of peer with given name and true if it exists, otherwise return false
@@ -36,14 +50,22 @@ func (table KeyTable) get(name string) (TrustedKeyRecord, bool) {
 }
 
 // Return the key of peer with given name and true if it exists, otherwise return false
-func (table KeyTable) GetKey(name string) (rsa.PublicKey, bool) {
+func (table KeyTable) getKey(name string) (rsa.PublicKey, bool) {
 	rec, present := table.get(name)
 	return rec.record.KeyPub, present
 }
 
+// Create an empty KeyTable
+func newKeyTable() KeyTable {
+	return KeyTable{
+		db:    make(map[string]TrustedKeyRecord),
+		mutex: &sync.Mutex{},
+	}
+}
+
 // Retrieve the keys with a confidence level of 100%
 // If not yet signed, sign the keys
-func (table *KeyTable) GetTrustedKeys(priK rsa.PrivateKey, origin string) []TrustedKeyRecord {
+func (table *KeyTable) getTrustedKeys(priK rsa.PrivateKey, origin string) []TrustedKeyRecord {
 	r := make([]TrustedKeyRecord, 0)
 	table.mutex.Lock()
 
@@ -62,47 +84,25 @@ func (table *KeyTable) GetTrustedKeys(priK rsa.PrivateKey, origin string) []Trus
 	return r
 }
 
-// Create an empty KeyTable
-func newKeyTable() KeyTable {
-	return KeyTable{
-		db:    make(map[string]TrustedKeyRecord),
-		mutex: &sync.Mutex{},
-	}
-}
-
-// Create a new KeyTable with own's key
-func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
-	table := newKeyTable()
-	table.Add(TrustedKeyRecord {
-		record: KeyRecord {
-			Owner: owner,
-			KeyPub: key,
-		},
-		confidence: 1.0, // confidence 100%
-	})
-
-	return table
-}
-
-func NewKeyTableWithIntroducers(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) KeyTable {
-	table := newKeyTable()
-	table.Add(TrustedKeyRecord {
-		record: KeyRecord {
-			Owner: owner,
-			KeyPub: key,
-		},
-		confidence: 1.0, // confidence 100%
-	})
-
-	for _, rec := range trustedRecords {
-		table.Add(TrustedKeyRecord {
-			record: KeyRecord {
-				Owner: rec.Owner,
-				KeyPub: rec.KeyPub,
-			},
-			confidence: 1.0, // confidence 100%
-		})
-	}
-
-	return table
-}
+// func NewKeyTableWithIntroducers(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) KeyTable {
+// 	table := newKeyTable()
+// 	table.Add(TrustedKeyRecord {
+// 		record: KeyRecord {
+// 			Owner: owner,
+// 			KeyPub: key,
+// 		},
+// 		confidence: 1.0, // confidence 100%
+// 	})
+//
+// 	for _, rec := range trustedRecords {
+// 		table.Add(TrustedKeyRecord {
+// 			record: KeyRecord {
+// 				Owner: rec.Owner,
+// 				KeyPub: rec.KeyPub,
+// 			},
+// 			confidence: 1.0, // confidence 100%
+// 		})
+// 	}
+//
+// 	return table
+// }

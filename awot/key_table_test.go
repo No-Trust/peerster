@@ -24,26 +24,26 @@ func TestSigningExchangeMessage(t *testing.T) {
 		keyExchangeMessage: nil,
 	}
 
-	table.Add(r1)
+	table.add(r1)
 	rec1, _ := table.get("node1")
 
-	table.GetTrustedKeys(*r1K, "mynode")
+	table.getTrustedKeys(*r1K, "mynode")
 
 	if rec1.keyExchangeMessage != nil {
-		t.Errorf("GetTrustedKeys returns a pointer")
+		t.Errorf("getTrustedKeys returns a pointer")
 	}
 
 	rec2, _ := table.get("node1")
 
 	if rec2.keyExchangeMessage == nil {
-		t.Errorf("GetTrustedKeys does not sign")
+		t.Errorf("getTrustedKeys does not sign")
 	}
 }
 
 func TestAddRetrieveRemove(t *testing.T) {
 	table := newKeyTable()
 
-	_, present := table.GetKey("node1")
+	_, present := table.getKey("node1")
 	if present {
 		t.Errorf("retrieving unknown key returns")
 	}
@@ -60,8 +60,8 @@ func TestAddRetrieveRemove(t *testing.T) {
 		},
 	}
 
-	table.Add(r1)
-	pk1, present := table.GetKey("node1")
+	table.add(r1)
+	pk1, present := table.getKey("node1")
 
 	if !present {
 		t.Errorf("cannot retrieve existing key")
@@ -71,9 +71,9 @@ func TestAddRetrieveRemove(t *testing.T) {
 		t.Errorf("keys are different")
 	}
 
-	table.Remove(r1.record.Owner)
+	table.remove(r1.record.Owner)
 
-	_, present = table.GetKey("node1")
+	_, present = table.getKey("node1")
 
 	if present {
 		t.Errorf("record was not deleted")
