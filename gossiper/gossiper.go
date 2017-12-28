@@ -32,7 +32,6 @@ type Gossiper struct {
 	metadataSet         MetadataSet         // file metadatas
 	FileDownloads       FileDownloads       // file downloads : file that are being downloaded
 	key                 rsa.PrivateKey      // private key / public key of this gossiper
-	//keyTable            awot.KeyTable       // table of records public key - peers with confidence level
 	reputationTable     rep.ReputationTable // Reputation table
 	trustedKeys         []awot.KeyRecord    // fully trusted keys, bootstrap of awot
 	keyRing             awot.KeyRing				// key ring of awot
@@ -63,7 +62,6 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 		key:                 key,
-		//keyTable:            keyTable,
 		reputationTable:     rep.NewReputationTable(&peerSet),
 		trustedKeys:         trustedKeys,
 		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys),
