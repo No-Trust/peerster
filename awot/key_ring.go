@@ -6,6 +6,7 @@ import (
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
+	"gonum.org/v1/gonum/graph"
 	"io/ioutil"
 	"path/filepath"
 	"fmt"
@@ -17,7 +18,7 @@ type nodeName string
 type nodeId int64
 
 // A Node in the key ring
-type Vertice struct {
+type Vertex struct {
 	name        nodeName // name
 	id          nodeId   // id
 	probability float32  // probability
@@ -26,7 +27,7 @@ type Vertice struct {
 // Key Ring implementation
 type KeyRing struct {
 	source   nodeName
-	ids      map[nodeName]Vertice
+	ids      map[nodeName]Vertex
 	graph    simple.DirectedGraph
 	keyTable KeyTable // for updates
 	mutex    *sync.Mutex
@@ -59,13 +60,29 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 
   // recompute the confidence of the keys
 	ring.update()
-
-	ring.mutex.Unlock()
 }
 
-// Update the key table with newly computed confidence levels of each key
+// Update the key table : computes new confidence levels for each key
 func (ring *KeyRing) update() {
-	// TODO
+	allShortest := path.DijkstraAllPaths(&ring.graph)
+
+	ring.mutex.Lock()
+
+	source := ring.graph.Node(int64(ring.ids[ring.source].id))
+
+	// compute for each node
+	// for _, terminal := range ring.graph.Nodes() {
+	for terminalName, terminalVertex := range ring.ids {
+		terminal := ring.graph.Node(int64(terminalVertex.id))
+		// get shortest paths from source to node
+		minpaths, _ := allShortest.AllBetween(source, terminal)
+		probability := ring.probabilityOfMinPaths(minpaths)
+
+		// update the key table
+		ring.keyTable.updateConfidence(string(terminalName), probability)
+	}
+
+	ring.mutex.Unlock()
 }
 
 // Compute the probability of the node, independent of its current probability
@@ -96,7 +113,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) Key
 	keyTable := NewKeyTable(owner, key)
 
 	// map
-	ids := make(map[nodeName]Vertice)
+	ids := make(map[nodeName]Vertex)
 	// create empty graph
 	graph := simple.NewDirectedGraph()
 
@@ -104,7 +121,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) Key
 	source := graph.NewNode()
 	graph.AddNode(source)
 	// set id and name association in map
-	sourceV := Vertice{
+	sourceV := Vertex{
 		name:        nodeName(owner),
 		id:          nodeId(source.ID()),
 		probability: 1.0,
@@ -125,7 +142,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) Key
 		node := graph.NewNode()
 		graph.AddNode(node)
 		// set id and name association in map
-		nodeV := Vertice{
+		nodeV := Vertex{
 			name:        nodeName(rec.Owner),
 			id:          nodeId(node.ID()),
 			probability: 1.0,
@@ -174,8 +191,23 @@ func (ring KeyRing) contains(name string) bool {
 	return present
 }
 
-// Add a Vertice to the Keyring with given name and probability
-// If the Vertice already exists, update its probability
+// Return the vertice associated with the given node
+func (ring KeyRing) getVertex(node graph.Node) (Vertex, bool) {
+	ring.mutex.Lock()
+
+	for _, v := range ring.ids {
+		if int64(v.id) == node.ID() {
+			ring.mutex.Unlock()
+			return v, true
+		}
+	}
+
+	ring.mutex.Unlock()
+	return Vertex{}, false
+}
+
+// Add a Vertex to the Keyring with given name and probability
+// If the Vertex already exists, update its probability
 func (ring *KeyRing) addNode(name string, probability float32) {
 	ring.mutex.Lock()
 	nodename := nodeName(name)
@@ -190,7 +222,7 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	// add to graph
 	node := ring.graph.NewNode()
 	ring.graph.AddNode(node)
-	ring.ids[nodename] = Vertice{
+	ring.ids[nodename] = Vertex{
 		name:        nodename,
 		id:          nodeId(node.ID()),
 		probability: probability,
