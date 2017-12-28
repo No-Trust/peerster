@@ -138,6 +138,10 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		// process data reply
 		go g.processDataReply(pkt.DataReply, remoteaddr)
 	}
+  if pkt.RepUpdate != nil {
+    // process reputation update
+    go g.reputationTable.UpdateReputations(pkt.RepUpdate, &A)
+  }
 
 	return
 }

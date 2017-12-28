@@ -21,3 +21,8 @@ type ReputationTable struct {
 	contribReps map[*common.Peer]float32
 	mutex       *sync.Mutex
 }
+
+type RepUpdate struct {
+  sigReps     map[*common.Peer]float32
+  contribReps map[*common.Peer]float32
+}
