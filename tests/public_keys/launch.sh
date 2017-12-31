@@ -59,7 +59,7 @@ startGossip peer0 5000 10000
 startGossip peer1 5001 10001
 startGossip peer2 5002 10002
 
-sleep 10
+sleep 35
 killall gossiper
 
 cp peer0/peer0.pub keys/

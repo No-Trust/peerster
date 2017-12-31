@@ -2,8 +2,73 @@
 package main
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"github.com/No-Trust/peerster/awot"
+	"github.com/No-Trust/peerster/common"
+	"net"
 )
+
+// Procedure for inbound KeyExchangeMessage
+func (g *Gossiper) processKeyExchangeMessage(msg awot.KeyExchangeMessage, remoteaddr *net.UDPAddr) {
+
+	// deserialize public key
+	if msg.KeyBytes == nil {
+		return
+	}
+
+	pemBlock, _ := pem.Decode(*msg.KeyBytes)
+	if pemBlock == nil {
+		return
+	}
+	keypub, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
+	common.CheckError(err)
+	original, ok := keypub.(*rsa.PublicKey)
+	if !ok {
+		return
+	}
+
+	msg.KeyRecord.KeyPub = *original
+
+	// check the origin against the key table
+	kpub, present := g.keyRing.GetKey(msg.Origin)
+
+	if !present {
+		// received a key record from a peer with no corresponding public key in memory
+		// add the message to the pending list, it may be useful after getting the key
+		g.standardOutputQueue <- KeyExchangeReceiveUnverifiedString(msg.KeyRecord.Owner, *remoteaddr)
+		g.keyRing.AddUnverified(msg)
+		return
+	}
+
+	// check validity of signature
+
+	err = awot.Verify(msg, kpub)
+	g.standardOutputQueue <- KeyExchangeReceiveString(msg.KeyRecord.Owner, *remoteaddr, err == nil)
+
+	if err != nil {
+		// signature does not correspond
+		// either :
+		//	- error in network layers below (rare)
+		//	- malicious sender : either true sender, or MITM
+		// TODO Raja ;-)
+		return
+	}
+
+	// the signature is valid
+
+	// update key ring
+	g.keyRing.Add(msg.KeyRecord, msg.Origin)
+}
+
+// Sends the self signed signature to other peers
+func (g *Gossiper) SendSignatures() {
+	for _, rec := range g.trustedKeys {
+		// send to a random neighbor
+		sendCertificate(g, rec)
+	}
+}
 
 // Send a fresh key record to a random neighbor as a rumor message
 func sendCertificate(g *Gossiper, rec awot.TrustedKeyRecord) {

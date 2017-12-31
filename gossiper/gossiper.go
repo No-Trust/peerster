@@ -27,14 +27,14 @@ type Gossiper struct {
 	waitersMutex        *sync.Mutex
 	fileWaiters         map[string]chan *DataReply // goroutines waiting for a data reply
 	fileWaitersMutex    *sync.Mutex
-	standardOutputQueue chan *string        // output queue for the standard output
-	routingTable        RoutingTable        // routing table
-	metadataSet         MetadataSet         // file metadatas
-	FileDownloads       FileDownloads       // file downloads : file that are being downloaded
-	key                 rsa.PrivateKey      // private key / public key of this gossiper
-	reputationTable     rep.ReputationTable // Reputation table
-	trustedKeys         []awot.KeyRecord    // fully trusted keys, bootstrap of awot
-	keyRing             awot.KeyRing				// key ring of awot
+	standardOutputQueue chan *string            // output queue for the standard output
+	routingTable        RoutingTable            // routing table
+	metadataSet         MetadataSet             // file metadatas
+	FileDownloads       FileDownloads           // file downloads : file that are being downloaded
+	key                 rsa.PrivateKey          // private key / public key of this gossiper
+	reputationTable     rep.ReputationTable     // Reputation table
+	trustedKeys         []awot.TrustedKeyRecord // fully trusted keys, bootstrap of awot
+	keyRing             awot.KeyRing            // key ring of awot
 }
 
 // Create a new Gossiper
@@ -71,6 +71,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 
 // Start the Gossiper
 func (g *Gossiper) Start() {
+	
 	var wg sync.WaitGroup
 	wg.Add(8)
 
@@ -89,10 +90,12 @@ func (g *Gossiper) Start() {
 	// Route Rumor Sender thread
 	go routerumor(g, g.Parameters.Rtimer, wg)
 
+	fmt.Println("INITIALIZATION DONE")
+
+	// Send signatures
+	g.SendSignatures()
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
-
-	fmt.Println("INITIALIZATION DONE")
 
 	// waiting for all goroutines to terminate
 	wg.Wait()
@@ -136,10 +139,10 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		// process data reply
 		go g.processDataReply(pkt.DataReply, remoteaddr)
 	}
-  if pkt.RepUpdate != nil {
-    // process reputation update
-    go g.reputationTable.UpdateReputations(pkt.RepUpdate, &A)
-  }
+	if pkt.RepUpdate != nil {
+		// process reputation update
+		go g.reputationTable.UpdateReputations(pkt.RepUpdate, &A)
+	}
 
 	return
 }

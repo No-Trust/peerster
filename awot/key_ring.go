@@ -1,17 +1,19 @@
 package awot
 
 import (
+	"container/list"
 	"crypto/rsa"
 	"errors"
+	"fmt"
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
-	"gonum.org/v1/gonum/graph"
 	"io/ioutil"
-	"path/filepath"
-	"fmt"
-	"sync"
 	"math"
+	"path/filepath"
+	"sync"
+	"time"
 )
 
 type nodeName string
@@ -29,21 +31,33 @@ type KeyRing struct {
 	source   nodeName
 	ids      map[nodeName]Vertex
 	graph    simple.DirectedGraph
-	keyTable KeyTable // for updates
+	keyTable KeyTable   // for updates
+	pending  *list.List // pending keyExchangeMessage
 	mutex    *sync.Mutex
 }
+
+/////					Key Ring API					/////
 
 // Return the key of peer with given name and true if it exists, otherwise return false
 func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
 	return ring.keyTable.getKey(name)
 }
 
+// Return the record of peer with given name and true if it exists, otherwise return false
+func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
+	return ring.keyTable.get(name)
+}
+
+// Add an exchange message that could not be verified (lack of signer's key)
+func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
+	ring.mutex.Lock()
+	ring.pending.PushBack(msg)
+	ring.mutex.Unlock()
+}
+
 // Update the key ring with the given key and origin of the signature
 // Assumes that the signature is correct
 func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
-	// sigName := nodeName(sigOrigin)
-	// ownerName := nodeName(rec.Owner)
-
 	// do not update if the signer is unknown
 	if !ring.contains(sigOrigin) {
 		return
@@ -51,6 +65,8 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 
 	// add owner of the key if not yet known, or update its probability
 	ring.addNode(rec.Owner, 0.0)
+	// add edge // TODO
+	ring.addEdge(sigOrigin, rec.Owner)
 
 	// recompute its probability
 	probability := ring.phi(rec.Owner)
@@ -58,8 +74,114 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 	// update probability
 	ring.addNode(rec.Owner, probability)
 
-  // recompute the confidence of the keys
-	ring.update()
+	// // recompute the confidence of the keys
+	// ring.update()
+}
+
+// Create a new key-ring with given fully trusted origin-public key pairs
+// The key ring will update the keytable when needed
+// Creating a Key Ring will also spawn a new goroutine for updating the key ring regularly
+func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord) KeyRing {
+
+	keyTable := NewKeyTable(owner, key)
+
+	// map
+	ids := make(map[nodeName]Vertex)
+	// create empty graph
+	graph := simple.NewDirectedGraph()
+
+	// add source to graph
+	source := graph.NewNode()
+	graph.AddNode(source)
+	// set id and name association in map
+	sourceV := Vertex{
+		name:        nodeName(owner),
+		id:          nodeId(source.ID()),
+		probability: 1.0,
+	}
+	ids[nodeName(owner)] = sourceV
+	// add key
+	keyTable.add(TrustedKeyRecord{
+		Record: KeyRecord{
+			Owner:  owner,
+			KeyPub: key,
+		},
+		Confidence: 1.0,
+	})
+
+	// add each fully trusted key
+	for _, rec := range trustedRecords {
+		// add node to graph
+		node := graph.NewNode()
+		graph.AddNode(node)
+		// set id and name association in map
+		nodeV := Vertex{
+			name:        nodeName(rec.Record.Owner),
+			id:          nodeId(node.ID()),
+			probability: 1.0,
+		}
+		ids[nodeName(rec.Record.Owner)] = nodeV
+
+		// add edge from source to new node
+
+		// add edge from source
+		source := ids[nodeName(owner)]
+
+		graph.SetEdge(simple.Edge{F: simple.Node(source.id), T: simple.Node(nodeV.id)})
+
+		// add key
+		keyTable.add(TrustedKeyRecord{
+			Record: KeyRecord{
+				Owner:  rec.Record.Owner,
+				KeyPub: rec.Record.KeyPub,
+			},
+			Confidence: rec.Confidence,
+		})
+
+	}
+
+	ring := KeyRing{
+		source:   nodeName(owner),
+		ids:      ids,
+		graph:    *graph,
+		keyTable: keyTable,
+		pending:  list.New(),
+		mutex:    &sync.Mutex{},
+	}
+
+	// TODO
+	ring.Save("ring")
+
+	go ring.worker()
+
+	// return
+	return ring
+}
+
+/////					Key Ring Implementation					/////
+
+func (ring *KeyRing) worker() {
+
+	// updating the ring with yet unverified pending messages
+	go func() {
+		ticker := time.NewTicker(time.Second * time.Duration(5)) // every rate 5 sec
+		defer ticker.Stop()
+		for _ = range ticker.C {
+			ring.updatePending()
+			ring.Save("ring-pending")
+		}
+	}()
+
+	// updating the confidence
+	go func() {
+		ticker := time.NewTicker(time.Second * time.Duration(5)) // every rate 5 sec
+		defer ticker.Stop()
+		for _ = range ticker.C {
+			ring.update()
+			ring.Save("ring-update")
+		}
+	}()
+
 }
 
 // Update the key table : computes new confidence levels for each key
@@ -85,8 +207,9 @@ func (ring *KeyRing) update() {
 	ring.mutex.Unlock()
 }
 
-// Compute the probability of the node, independent of its current probability
+// Compute the probability of the node, independently of its current probability
 func (ring KeyRing) phi(name string) float32 {
+	// phi = min(1/d, rep)
 	nodename := nodeName(name)
 	ring.mutex.Lock()
 
@@ -102,83 +225,11 @@ func (ring KeyRing) phi(name string) float32 {
 
 	reputation := 1.0 // TODO !!!
 
-	phi := math.Min(distance, reputation)
+	phi := math.Min(1.0/distance, reputation)
+
+	ring.mutex.Unlock()
+
 	return float32(phi)
-}
-
-// Create a new key-ring with given fully trusted origin-public key pairs
-// The key ring will update the keytable when needed
-func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []KeyRecord) KeyRing {
-
-	keyTable := NewKeyTable(owner, key)
-
-	// map
-	ids := make(map[nodeName]Vertex)
-	// create empty graph
-	graph := simple.NewDirectedGraph()
-
-	// add source to graph
-	source := graph.NewNode()
-	graph.AddNode(source)
-	// set id and name association in map
-	sourceV := Vertex{
-		name:        nodeName(owner),
-		id:          nodeId(source.ID()),
-		probability: 1.0,
-	}
-	ids[nodeName(owner)] = sourceV
-	// add key
-	keyTable.add(TrustedKeyRecord{
-		record: KeyRecord{
-			Owner:  owner,
-			KeyPub: key,
-		},
-		confidence: 1.0,
-	})
-
-	// add each fully trusted key
-	for _, rec := range trustedRecords {
-		// add node to graph
-		node := graph.NewNode()
-		graph.AddNode(node)
-		// set id and name association in map
-		nodeV := Vertex{
-			name:        nodeName(rec.Owner),
-			id:          nodeId(node.ID()),
-			probability: 1.0,
-		}
-		ids[nodeName(rec.Owner)] = nodeV
-
-		// add edge from source to new node
-
-		// add edge from source
-		source := ids[nodeName(owner)]
-
-		graph.SetEdge(simple.Edge{F: simple.Node(source.id), T: simple.Node(nodeV.id)})
-
-		// add key
-		keyTable.add(TrustedKeyRecord{
-			record: KeyRecord{
-				Owner:  rec.Owner,
-				KeyPub: rec.KeyPub,
-			},
-			confidence: 1.0,
-		})
-	}
-
-	ring := KeyRing{
-		source:   nodeName(owner),
-		ids:      ids,
-		graph:    *graph,
-		keyTable: keyTable,
-		mutex:    &sync.Mutex{},
-	}
-
-	// TODO
-	ring.Save("NEW-RING.dot")
-
-	// return
-	return ring
 }
 
 // Check if the node with given name exists in the key ring
@@ -229,6 +280,7 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	}
 
 	ring.mutex.Unlock()
+	return
 }
 
 // Add a directed edge between nodes named a and b, from a to b
@@ -257,6 +309,32 @@ func (ring *KeyRing) addEdge(a, b string) error {
 	return nil
 }
 
+// Loop over the stored unverified messages and process them
+func (ring *KeyRing) updatePending() {
+	ring.mutex.Lock()
+	for e := ring.pending.Front(); e != nil; e = e.Next() {
+		fmt.Println("~~~ Update Pending : ", e.Value.(KeyExchangeMessage))
+		// check the origin against the key table
+		msg := e.Value.(KeyExchangeMessage)
+		kpub, present := ring.GetKey(msg.Origin)
+
+		if !present {
+			// still do not have a public key
+			continue
+		}
+
+		err := Verify(msg, kpub)
+
+		if err == nil {
+			ring.Add(msg.KeyRecord, msg.Origin)
+		}
+
+		// remove from pending list
+		ring.pending.Remove(e)
+	}
+	ring.mutex.Unlock()
+}
+
 // Marshal the graph and write to file in dot format
 func (ring KeyRing) Save(filename string) error {
 	path, err := filepath.Abs(filename)
@@ -264,13 +342,14 @@ func (ring KeyRing) Save(filename string) error {
 		return err
 	}
 	ring.mutex.Lock()
-	title := "KeyRing"
+	title := fmt.Sprintf("%d", time.Now().Unix())
 	bytes, err := dot.Marshal(&(ring.graph), title, "", "", false)
 	if err != nil {
 		ring.mutex.Unlock()
 		return err
 	}
-	err = ioutil.WriteFile(path, bytes, 0644)
+	f := fmt.Sprintf("%s_%s.dot", path, title)
+	err = ioutil.WriteFile(f, bytes, 0644)
 	ring.mutex.Unlock()
 
 	return err

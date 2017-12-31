@@ -59,6 +59,7 @@ func writer(g *Gossiper, udpConn net.UDPConn, queue chan *Packet, wg sync.WaitGr
 	for pkt := range queue {
 		destination := pkt.Destination
 		gossipPacket := pkt.GossipPacket
+
 		buf, err := protobuf.Encode(&gossipPacket)
 		common.CheckRead(err)
 		_, err = udpConn.WriteToUDP(buf, &destination)

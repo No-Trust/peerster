@@ -11,10 +11,24 @@ import (
 )
 
 type KeyExchangeMessage struct {
-	KeyRecord KeyRecord // association (public-key, owner)
-	Origin    string    // origin of the signature
-	signature []byte    // signature of keyPub by owner
+	KeyRecord   KeyRecord // association (public-key, owner)
+	KeyBytes *[]byte
+	Origin      string // origin of the signature
+	Signature   []byte // signature of keyPub by owner
 }
+
+// // TODO !!!
+// func (msg KeyExchangeMessage) Copy() KeyExchangeMessage{
+// 	sig := make([]byte, len(msg.signature))
+// 	copy(sig, msg.signature)
+// 	msg2 := KeyExchangeMessage {
+// 		KeyRecord: msg.KeyRecord,
+// 		Origin: msg.Origin,
+// 		signature: sig,
+// 	}
+//
+// 	return msg2
+// }
 
 // Verifies that the received message is signed by the pretended origin
 // Return nil if valid, an error otherwise
@@ -30,7 +44,7 @@ func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
 	var opts rsa.PSSOptions
 	opts.SaltLength = rsa.PSSSaltLengthAuto
 
-	return rsa.VerifyPSS(&OriginKeyPub, hash, hashed, msg.signature, &opts)
+	return rsa.VerifyPSS(&OriginKeyPub, hash, hashed, msg.Signature, &opts)
 }
 
 // Create a KeyExchangeMessage by signing the public key record, using given private key and attach own's name to the signature
@@ -53,7 +67,7 @@ func create(keyRecord KeyRecord, ownPrivateKey rsa.PrivateKey, origin string) Ke
 	msg := KeyExchangeMessage{
 		KeyRecord: keyRecord,
 		Origin:    origin,
-		signature: signature,
+		Signature: signature,
 	}
 
 	return msg

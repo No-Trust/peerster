@@ -49,13 +49,13 @@ func TestKeyExchangeSigning(t *testing.T) {
 		t.Errorf("Could not create private key")
 	}
 
-	record := KeyRecord{
+	recordForB := KeyRecord{
 		Owner:  B,
 		KeyPub: keyB.PublicKey,
 	}
 
 	// A signs B's key
-	msg := create(record, *keyA, A)
+	msg := create(recordForB, *keyA, A)
 
 	// check that the signature is correct
 	err = Verify(msg, keyA.PublicKey)

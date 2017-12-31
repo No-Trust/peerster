@@ -11,7 +11,7 @@ func (p Path) toArray() []graph.Node {
 	return []graph.Node(p)
 }
 
-// Return the intersections of all t paths from the given paths
+// Return all the intersections of any t paths in given paths
 func comb(paths []Path, t int) []Path {
 
 	if t == len(paths) {
@@ -31,7 +31,7 @@ func comb(paths []Path, t int) []Path {
 	return append(with, without...)
 }
 
-// Compute the probability of the given minimum paths, using the inclusion exclusion formula
+// Compute the probability of the given shortest paths, using the inclusion exclusion formula
 func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
   // convert minpaths to []Path
   minPaths := make([]Path, len(minpaths))
@@ -99,32 +99,3 @@ func intersection(paths [][]graph.Node) []graph.Node {
 	}
 	return r
 }
-
-// // compute the probability of the intersection of the two paths
-// func (ring KeyRing) probabilityOfIntersection(patha []graph.Node, pathb []graph.Node) float32 {
-// 	path1 := patha
-// 	path2 := pathb
-// 	if len(patha) > len(pathb) {
-// 		path1 = pathb
-// 		path2 = patha
-// 	}
-//
-// 	p := ring.probabilityOfPath(path1)
-//
-// 	for _, n2 := range path2 {
-// 		// check if in path1
-// 		c := false
-// 		for _, n1 := range path1 {
-// 			if n2.ID() == n1.ID() {
-// 				c = true
-// 				break
-// 			}
-// 		}
-// 		if !c {
-// 			// does not exist in path1
-// 			v, _ := ring.getVertex(n2)
-// 			p = p * v.probability
-// 		}
-// 	}
-// 	return p
-// }

@@ -2,12 +2,12 @@
 package main
 
 import (
-	"github.com/No-Trust/peerster/common"
-	"net"
-	"sync"
 	"fmt"
 	"github.com/No-Trust/peerster/awot"
+	"github.com/No-Trust/peerster/common"
 	"github.com/No-Trust/peerster/rep"
+	"net"
+	"sync"
 )
 
 /*
@@ -29,11 +29,11 @@ type PeerMessage struct {
 }
 
 type RumorMessage struct {
-	Origin   string
-	ID       uint32
-	Text     string
-	LastIP   *net.IP
-	LastPort *int
+	Origin      string
+	ID          uint32
+	Text        string
+	LastIP      *net.IP
+	LastPort    *int
 	KeyExchange *awot.KeyExchangeMessage
 }
 
@@ -97,7 +97,7 @@ func (rumor *RumorMessage) isRoute() bool {
 }
 
 func (rumor *RumorMessage) isKeyExchange() bool {
-	return rumor.Text == "" && rumor.KeyExchange != nil
+	return rumor.KeyExchange != nil
 }
 
 func (rumor *RumorMessage) isChat() bool {

@@ -9,7 +9,6 @@ import (
 // Implementation of the rumormongering algorithm.
 // Send a rumor to destination and continue with a random peer with probability 1/2
 func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
-
 	g.standardOutputQueue <- rumor.MongeringString(destPeer.Address)
 	// send rumor to peer
 
