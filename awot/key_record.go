@@ -1,12 +1,12 @@
 package awot
 
 import (
-  "crypto/rsa"
-  "crypto/x509"
-  "encoding/pem"
-  "log"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"log"
 )
-
 
 // A key record, i.e. an association (public-key, owner)
 type KeyRecord struct {
@@ -25,6 +25,7 @@ type TrustedKeyRecord struct {
 func (rec *TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) TrustedKeyRecord {
 	if rec.keyExchangeMessage == nil {
 		msg := create(rec.Record, priK, origin)
+		fmt.Println("SIGNING ", rec.Record.Owner, "using ", priK.PublicKey)
 		rec.keyExchangeMessage = &msg
 	}
 	return *rec
@@ -33,29 +34,28 @@ func (rec *TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) TrustedKey
 func (rec *TrustedKeyRecord) GetMessage(priK rsa.PrivateKey, origin string) KeyExchangeMessage {
 	//return *(rec.sign(priK, origin)).keyExchangeMessage
 
-  // sign
-  rec.sign(priK, origin)
+	// sign
+	rec.sign(priK, origin)
 
-  msg := rec.keyExchangeMessage
+	msg := rec.keyExchangeMessage
 
+	////////////
+	PubASN1, err := x509.MarshalPKIXPublicKey(&(rec.Record.KeyPub))
+	if err != nil {
+		log.Fatal("x509 MarshalPKIXPublicKey error")
+	}
 
-  ////////////
-  PubASN1, err := x509.MarshalPKIXPublicKey(&(rec.Record.KeyPub))
-  if err != nil {
-    log.Fatal("x509 MarshalPKIXPublicKey error")
-  }
+	pubBytes := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: PubASN1,
+	})
 
-  pubBytes := pem.EncodeToMemory(&pem.Block{
-      Type:  "RSA PUBLIC KEY",
-      Bytes: PubASN1,
-  })
+	nrec := KeyExchangeMessage{
+		KeyRecord: msg.KeyRecord,
+		KeyBytes:  &pubBytes,
+		Origin:    msg.Origin,
+		Signature: msg.Signature,
+	}
 
-  nrec := KeyExchangeMessage {
-    KeyRecord: msg.KeyRecord,
-    KeyBytes: &pubBytes,
-    Origin: msg.Origin,
-    Signature: msg.Signature,
-  }
-
-  return nrec
+	return nrec
 }

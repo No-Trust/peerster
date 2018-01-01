@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"github.com/No-Trust/peerster/awot"
 	"github.com/No-Trust/peerster/common"
 	"net"
@@ -43,7 +44,6 @@ func (g *Gossiper) processKeyExchangeMessage(msg awot.KeyExchangeMessage, remote
 	}
 
 	// check validity of signature
-
 	err = awot.Verify(msg, kpub)
 	g.standardOutputQueue <- KeyExchangeReceiveString(msg.KeyRecord.Owner, *remoteaddr, err == nil)
 

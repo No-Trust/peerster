@@ -6,62 +6,49 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"github.com/No-Trust/peerster/common"
+	"log"
 )
 
 type KeyExchangeMessage struct {
-	KeyRecord   KeyRecord // association (public-key, owner)
-	KeyBytes *[]byte
-	Origin      string // origin of the signature
-	Signature   []byte // signature of keyPub by owner
+	KeyRecord KeyRecord // association (public-key, owner)
+	KeyBytes  *[]byte
+	Origin    string // origin of the signature
+	Signature []byte // signature of keyPub by owner
 }
-
-// // TODO !!!
-// func (msg KeyExchangeMessage) Copy() KeyExchangeMessage{
-// 	sig := make([]byte, len(msg.signature))
-// 	copy(sig, msg.signature)
-// 	msg2 := KeyExchangeMessage {
-// 		KeyRecord: msg.KeyRecord,
-// 		Origin: msg.Origin,
-// 		signature: sig,
-// 	}
-//
-// 	return msg2
-// }
 
 // Verifies that the received message is signed by the pretended origin
 // Return nil if valid, an error otherwise
 func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
-	str := fmt.Sprintf("%v", msg.KeyRecord)
-	data := []byte(str)
 
-	hash := crypto.SHA256
+	data := serializeRecord(msg.KeyRecord)
+
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
 
-	var opts rsa.PSSOptions
-	opts.SaltLength = rsa.PSSSaltLengthAuto
+	// var opts rsa.PSSOptions
+	// opts.SaltLength = rsa.PSSSaltLengthAuto
 
-	return rsa.VerifyPSS(&OriginKeyPub, hash, hashed, msg.Signature, &opts)
+	return rsa.VerifyPSS(&OriginKeyPub, crypto.SHA256, hashed, msg.Signature, nil) //&opts)
 }
 
 // Create a KeyExchangeMessage by signing the public key record, using given private key and attach own's name to the signature
 // Return the new KeyExchangeMessage
 func create(keyRecord KeyRecord, ownPrivateKey rsa.PrivateKey, origin string) KeyExchangeMessage {
-	str := fmt.Sprintf("%v", keyRecord)
-	data := []byte(str)
 
-	hash := crypto.SHA256
+	data := serializeRecord(keyRecord)
+
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
 
-	var opts rsa.PSSOptions
-	opts.SaltLength = rsa.PSSSaltLengthAuto
-
-	signature, err := rsa.SignPSS(rand.Reader, &ownPrivateKey, hash, hashed, &opts)
+	// var opts rsa.PSSOptions
+	// opts.SaltLength = rsa.PSSSaltLengthAuto
+	signature, err := rsa.SignPSS(rand.Reader, &ownPrivateKey, crypto.SHA256, hashed, nil) //&opts)
 	common.CheckError(err)
 
 	msg := KeyExchangeMessage{
@@ -71,4 +58,18 @@ func create(keyRecord KeyRecord, ownPrivateKey rsa.PrivateKey, origin string) Ke
 	}
 
 	return msg
+}
+
+func serializeRecord(rec KeyRecord) []byte {
+	PubASN1, err := x509.MarshalPKIXPublicKey(&(rec.KeyPub))
+	if err != nil {
+		log.Fatal("x509 MarshalPKIXPublicKey error")
+	}
+
+	data := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: PubASN1,
+	})
+
+	return append(data, []byte(" "+rec.Owner)...)
 }

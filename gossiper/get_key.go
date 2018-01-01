@@ -105,8 +105,6 @@ func getPublicKeysFromDirectory(dir string, except string) []awot.TrustedKeyReco
 		}
 	}
 
-	// fmt.Println("RECORDS")
-	// fmt.Println(records)
 	return records
 }
 

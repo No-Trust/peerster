@@ -63,4 +63,17 @@ func TestKeyExchangeSigning(t *testing.T) {
 	if err != nil {
 		t.Errorf("Signature of message is wrong")
 	}
+
+	trustedRecordForB := TrustedKeyRecord{
+		Record:     recordForB,
+		Confidence: 1.0,
+	}
+
+	msg = trustedRecordForB.GetMessage(*keyA, A)
+
+	err = Verify(msg, keyA.PublicKey)
+
+	if err != nil {
+		t.Errorf("Signature of message is wrong")
+	}
 }
