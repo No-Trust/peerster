@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"github.com/No-Trust/peerster/common"
 	"log"
 )

@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"github.com/No-Trust/peerster/awot"
 	"github.com/No-Trust/peerster/common"
 	"net"
