@@ -57,6 +57,11 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 
 	if rumor.ID == g.vectorClock.Get(rumor.Origin) {
 
+		// process key exchange message
+		if rumor.isKeyExchange() {
+			g.processKeyExchangeMessage(rumor.KeyExchange, remoteaddr)
+		}
+
 		// this is the 'expected' message
 
 		// update next hop routing table, unconditionnaly because this is a new rumor
@@ -82,10 +87,6 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 			}
 		}
 
-		// process key exchange message
-		if rumor.isKeyExchange() {
-			g.processKeyExchangeMessage(*rumor.KeyExchange, remoteaddr)
-		}
 	}
 
 	// send ack

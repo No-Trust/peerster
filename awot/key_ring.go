@@ -74,6 +74,12 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 	// update probability
 	ring.addNode(rec.Owner, probability)
 
+	// save key with "unknown" confidence, that will be computed after
+	ring.keyTable.add(TrustedKeyRecord {
+		Record: rec,
+		Confidence: float32(0.0),
+	})
+
 	// // recompute the confidence of the keys
 	// ring.update()
 }
@@ -311,24 +317,48 @@ func (ring *KeyRing) addEdge(a, b string) error {
 
 // Loop over the stored unverified messages and process them
 func (ring *KeyRing) updatePending() {
+	i := 1
 	ring.mutex.Lock()
 	for e := ring.pending.Front(); e != nil; e = e.Next() {
-		fmt.Println("~~~ Update Pending : ", e.Value.(KeyExchangeMessage))
+
+		fmt.Println("~~~ Update # ", i)
+		i += 1
+
 		// check the origin against the key table
 		msg := e.Value.(KeyExchangeMessage)
-		kpub, present := ring.GetKey(msg.Origin)
 
-		if !present {
-			// still do not have a public key
+		receivedKey, err := DeserializeKey(msg.KeyBytes)
+
+		if err != nil {
 			continue
 		}
 
-		err := Verify(msg, kpub)
-
-		if err == nil {
-			ring.Add(msg.KeyRecord, msg.Origin)
+		record := KeyRecord {
+			Owner: msg.Owner,
+			KeyPub: receivedKey,
 		}
 
+		fmt.Println("~~~ Update Pending for :", record.Owner, " signed by ", msg.Origin)
+
+		kpub, present := ring.GetKey(msg.Origin)
+		fmt.Println("~~~ key : ", kpub)
+
+		fmt.Println("~~~ sig:", msg.Signature)
+
+		if !present {
+			// still do not have a public key
+			fmt.Println("~~~ Update not present, looking for ", msg.Origin)
+			continue
+		}
+		fmt.Println("~~~ yep:")
+		err = Verify(msg, kpub)
+
+		if err == nil {
+			ring.Add(record, msg.Origin)
+			fmt.Println("~~~ Update successful ")
+		}
+
+		fmt.Println("~~~ Update done ")
 		// remove from pending list
 		ring.pending.Remove(e)
 	}

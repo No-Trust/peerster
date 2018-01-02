@@ -115,8 +115,8 @@ func KeyExchangeReceiveString(owner string, from net.UDPAddr, valid bool) *strin
 	}
 	return &str
 }
-func KeyExchangeReceiveUnverifiedString(owner string, from net.UDPAddr) *string {
-	str := fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s from %s:%s", owner, from.IP.String(), strconv.Itoa(from.Port))
+func KeyExchangeReceiveUnverifiedString(owner string, signer string, from net.UDPAddr) *string {
+	str := fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s signed by %s from %s:%s", owner, signer, from.IP.String(), strconv.Itoa(from.Port))
 	str += " UNVERIFIED"
 	return &str
 }

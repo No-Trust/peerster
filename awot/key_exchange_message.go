@@ -6,69 +6,52 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
-	"encoding/pem"
 	"github.com/No-Trust/peerster/common"
-	"log"
 )
 
 type KeyExchangeMessage struct {
-	KeyRecord KeyRecord // association (public-key, owner)
-	KeyBytes  *[]byte
-	Origin    string // origin of the signature
-	Signature []byte // signature of keyPub by owner
+	KeyBytes  []byte // serialized public key
+	Owner     string // owner of the public key
+	Origin    string // signer
+	Signature []byte // signature of (keyPub <-> owner)
 }
 
 // Verifies that the received message is signed by the pretended origin
 // Return nil if valid, an error otherwise
 func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
 
-	data := serializeRecord(msg.KeyRecord)
+	data := append(msg.KeyBytes, []byte(msg.Owner)...)
 
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
 
-	// var opts rsa.PSSOptions
+	//var opts rsa.PSSOptions
 	// opts.SaltLength = rsa.PSSSaltLengthAuto
-
 	return rsa.VerifyPSS(&OriginKeyPub, crypto.SHA256, hashed, msg.Signature, nil) //&opts)
 }
 
 // Create a KeyExchangeMessage by signing the public key record, using given private key and attach own's name to the signature
 // Return the new KeyExchangeMessage
-func create(keyRecord KeyRecord, ownPrivateKey rsa.PrivateKey, origin string) KeyExchangeMessage {
+func create(keybytes []byte, owner string, ownPrivateKey rsa.PrivateKey, origin string) KeyExchangeMessage {
 
-	data := serializeRecord(keyRecord)
+	data := append(keybytes, []byte(owner)...)
 
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
 
-	// var opts rsa.PSSOptions
+	//var opts rsa.PSSOptions
 	// opts.SaltLength = rsa.PSSSaltLengthAuto
 	signature, err := rsa.SignPSS(rand.Reader, &ownPrivateKey, crypto.SHA256, hashed, nil) //&opts)
 	common.CheckError(err)
 
 	msg := KeyExchangeMessage{
-		KeyRecord: keyRecord,
+		KeyBytes:  keybytes,
+		Owner:     owner,
 		Origin:    origin,
 		Signature: signature,
 	}
 
 	return msg
-}
-
-func serializeRecord(rec KeyRecord) []byte {
-	PubASN1, err := x509.MarshalPKIXPublicKey(&(rec.KeyPub))
-	if err != nil {
-		log.Fatal("x509 MarshalPKIXPublicKey error")
-	}
-
-	data := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: PubASN1,
-	})
-
-	return append(data, []byte(" "+rec.Owner)...)
 }

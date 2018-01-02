@@ -11,6 +11,7 @@ import (
 	"github.com/No-Trust/peerster/rep"
 	"github.com/dedis/protobuf"
 	"net"
+	"time"
 	"sync"
 )
 
@@ -71,7 +72,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 
 // Start the Gossiper
 func (g *Gossiper) Start() {
-	
+
 	var wg sync.WaitGroup
 	wg.Add(8)
 
@@ -92,10 +93,15 @@ func (g *Gossiper) Start() {
 
 	fmt.Println("INITIALIZATION DONE")
 
-	// Send signatures
-	g.SendSignatures()
+
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
+
+	time.Sleep(1000 * time.Millisecond)
+
+	// Send signatures
+	g.SendSignatures()
+
 
 	// waiting for all goroutines to terminate
 	wg.Wait()
@@ -121,7 +127,7 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 	// demultiplex packets
 	if pkt.Rumor != nil {
 		// process rumor
-		go g.processRumor(pkt.Rumor, remoteaddr)
+		g.processRumor(pkt.Rumor, remoteaddr)
 	}
 	if pkt.Status != nil {
 		// process status
