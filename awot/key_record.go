@@ -2,7 +2,6 @@ package awot
 
 import (
 	"crypto/rsa"
-	"fmt"
 )
 
 // A key record, i.e. an association (public-key, owner)
@@ -25,7 +24,6 @@ func (rec *TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) TrustedKey
 		keybytes := serializeKey(rec.Record.KeyPub)
 
 		msg := create(keybytes, rec.Record.Owner, priK, origin)
-		fmt.Println("SIGNING ", rec.Record.Owner, "using ", priK.PublicKey)
 
 		rec.keyExchangeMessage = &msg
 	}

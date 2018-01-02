@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"fmt"
 	"github.com/No-Trust/peerster/common"
 )
 
@@ -20,15 +19,10 @@ type KeyExchangeMessage struct {
 // Verifies that the received message is signed by the pretended origin
 // Return nil if valid, an error otherwise
 func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
-	fmt.Println("#! OH HEY 1")
 	data := append(msg.KeyBytes, []byte(msg.Owner)...)
-	fmt.Println("#! OH HEY 2")
-
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
-	fmt.Println("#! OH HEY 3")
-
 	var opts rsa.PSSOptions
 	opts.SaltLength = rsa.PSSSaltLengthAuto
 	return rsa.VerifyPSS(&OriginKeyPub, crypto.SHA256, hashed, msg.Signature, nil) //&opts)
