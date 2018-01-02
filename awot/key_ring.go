@@ -327,7 +327,7 @@ func (ring *KeyRing) updatePending() {
 		// check the origin against the key table
 		msg := e.Value.(KeyExchangeMessage)
 
-		receivedKey, err := DeserializeKey(msg.KeyBytes)
+		receivedKey, err := DeserializeKey([]byte(msg.KeyBytes))
 
 		if err != nil {
 			continue
@@ -343,7 +343,7 @@ func (ring *KeyRing) updatePending() {
 		kpub, present := ring.GetKey(msg.Origin)
 		fmt.Println("~~~ key : ", kpub)
 
-		fmt.Println("~~~ sig:", msg.Signature)
+		fmt.Println("~~~ sig:\n", msg.Signature)
 
 		if !present {
 			// still do not have a public key
@@ -354,7 +354,8 @@ func (ring *KeyRing) updatePending() {
 		err = Verify(msg, kpub)
 
 		if err == nil {
-			ring.Add(record, msg.Origin)
+			fmt.Println("~~~ DONE DONE DONE")
+			go ring.Add(record, msg.Origin)
 			fmt.Println("~~~ Update successful ")
 		}
 

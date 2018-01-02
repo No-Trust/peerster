@@ -4,23 +4,20 @@ package main
 import (
 	"github.com/No-Trust/peerster/awot"
 	"net"
+	"fmt"
 )
 
 // Procedure for inbound KeyExchangeMessage
 func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, remoteaddr *net.UDPAddr) {
-
-	sig := msg.Signature
-	nsig := make([]byte, len(sig))
-	copy(nsig, sig)
+	nsig := make([]byte, len(msg.Signature))
+	copy(nsig, msg.Signature)
 	msg.Signature = nsig
-
-	keybytes := msg.KeyBytes
-	nkeybytes := make([]byte, len(keybytes))
-	copy(nkeybytes, keybytes)
+	nkeybytes := make([]byte, len(msg.KeyBytes))
+	copy(nkeybytes, msg.KeyBytes)
 	msg.KeyBytes = nkeybytes
 
 	// deserialize key
-	receivedKey, err := awot.DeserializeKey(msg.KeyBytes)
+	receivedKey, err := awot.DeserializeKey([]byte(msg.KeyBytes))
 	if err != nil {
 		return
 	}
@@ -66,6 +63,7 @@ func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, remot
 // Send a fresh key record to a random neighbor as a rumor message
 func sendCertificate(g *Gossiper, rec awot.TrustedKeyRecord) {
 	msg := rec.ConstructMessage(g.key, g.Parameters.Identifier)
+	fmt.Println("SIGNING for", msg.Owner, "with sig : \n", msg.Signature)
 
 	nextSeq := g.vectorClock.Get(g.Parameters.Identifier)
 
