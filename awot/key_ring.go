@@ -33,13 +33,14 @@ type KeyRing struct {
 	source       string
 	ids          map[string]Node // name -> Node
 	graph        simple.DirectedGraph
+	nextNode     int64
 	keyTable     KeyTable   // for updates
 	pending      *list.List // pending keyExchangeMessage
 	pendingMutex *sync.Mutex
 	mutex        *sync.Mutex
 }
 
-/////					Key Ring API					/////
+////////// Key Ring API
 
 // Return the key of peer with given name and true if it exists, otherwise return false
 func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
@@ -69,7 +70,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 	// add owner of the key if not yet known, or update its probability
 	ring.addNode(rec.Owner, 0.0)
 
-	// add edge // TODO
+	// add edge
 	err := ring.addEdge(sigOrigin, rec.Owner)
 
 	if err != nil {
@@ -98,6 +99,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord) KeyRing {
 
 	keyTable := NewKeyTable(owner, key)
+	nextNode := int64(0)
 
 	// map
 	ids := make(map[string]Node)
@@ -106,15 +108,15 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	graph := simple.NewDirectedGraph()
 
 	// add source to graph
-	source := graph.NewNode()
-	graph.AddNode(source)
-	// set id and name association in map
-	sourceV := Node{
+	source := Node{
 		name:        owner,
-		id:          source.ID(),
+		id:          nextNode,
 		probability: 1.0,
 	}
-	ids[owner] = sourceV
+	nextNode += 1
+	graph.AddNode(source)
+	// set id and name association in map
+	ids[owner] = source
 	// add key
 	keyTable.add(TrustedKeyRecord{
 		Record: KeyRecord{
@@ -127,22 +129,24 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	// add each fully trusted key
 	for _, rec := range trustedRecords {
 		// add node to graph
-		node := graph.NewNode()
-		graph.AddNode(node)
-		// set id and name association in map
-		nodeV := Node{
+		node := Node{
 			name:        rec.Record.Owner,
-			id:          node.ID(),
+			id:          nextNode,
 			probability: 1.0,
 		}
-		ids[rec.Record.Owner] = nodeV
+		nextNode += 1
+		graph.AddNode(node)
+		// set id and name association in map
+		ids[rec.Record.Owner] = node
 
 		// add edge from source to new node
 
 		// add edge from source
-		source := ids[owner]
-
-		graph.SetEdge(simple.Edge{F: simple.Node(source.id), T: simple.Node(nodeV.id)})
+		edge := simple.Edge{
+			F: source,
+			T: node,
+		}
+		graph.SetEdge(edge)
 
 		// add key
 		keyTable.add(TrustedKeyRecord{
@@ -159,6 +163,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		source:       owner,
 		ids:          ids,
 		graph:        *graph,
+		nextNode:     nextNode,
 		keyTable:     keyTable,
 		pending:      list.New(),
 		pendingMutex: &sync.Mutex{},
@@ -171,13 +176,12 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	return ring
 }
 
-/////					Key Ring Implementation					/////
+////////// Key Ring Implementation
 
 func (ring *KeyRing) worker() {
-
 	// updating the ring with yet unverified pending messages
 	go func() {
-		ticker := time.NewTicker(time.Second * time.Duration(5)) // every rate 5 sec
+		ticker := time.NewTicker(time.Second * time.Duration(5)) // every 5 sec
 		defer ticker.Stop()
 		for _ = range ticker.C {
 			ring.updatePending()
@@ -189,15 +193,14 @@ func (ring *KeyRing) worker() {
 
 // Update the key table : computes new confidence levels for each key
 func (ring *KeyRing) updateConfidence() {
-	allShortest := path.DijkstraAllPaths(&ring.graph)
-
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
+
+	allShortest := path.DijkstraAllPaths(&ring.graph)
 
 	source := ring.graph.Node(int64(ring.ids[ring.source].id))
 
 	// compute for each node
-	// for _, terminal := range ring.graph.Nodes() {
 	for terminalName, terminalVertex := range ring.ids {
 		terminal := ring.graph.Node(terminalVertex.id)
 		// get shortest paths from source to node
@@ -282,7 +285,6 @@ func (ring KeyRing) phi(name string) float32 {
 	shortest := path.DijkstraFrom(sourceNode, &ring.graph)
 	distance := shortest.WeightTo(destNode)
 
-	// TODO
 	// fmt.Println("--- DISTANCE from %s to %s = %f", ring.source, name, distance)
 
 	reputation := 1.0 // TODO !!!
@@ -300,26 +302,26 @@ func (ring KeyRing) phi(name string) float32 {
 // It does not check if it exists in the key table
 func (ring KeyRing) contains(name string) bool {
 	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
 	_, present := ring.ids[name]
-	ring.mutex.Unlock()
 	return present
 }
 
 // Return the vertice associated with the given node
 func (ring KeyRing) getVertex(node graph.Node) (Node, bool) {
 	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
 
 	for _, v := range ring.ids {
 		if v.id == node.ID() {
-			ring.mutex.Unlock()
 			return v, true
 		}
 	}
 
-	ring.mutex.Unlock()
 	return Node{}, false
 }
 
+// Return the id of the noden with highest id
 func (ring KeyRing) lastNode() int64 {
 	maxId := int64(0)
 	nodes := ring.graph.Nodes()
@@ -348,18 +350,21 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 
 	// add to graph
 	//node := ring.graph.NewNode()
-	node := simple.Node(ring.lastNode() + 1)
-	ring.graph.AddNode(node + 1)
-	ring.ids[name] = Node{
+	// node := simple.Node(ring.lastNode() + 1)
+	node := Node{
+		id:          ring.lastNode() + 1,
 		name:        name,
-		id:          node.ID() + 1,
 		probability: probability,
 	}
+	// ring.graph.AddNode(node + 1)
+	// ring.nextNode += 1
+	ring.graph.AddNode(node)
+	ring.ids[name] = node
 
 	return
 }
 
-// Add a directed edge between nodes named a and b, from a to b
+// Add a directed edge from a to b
 func (ring *KeyRing) addEdge(a, b string) error {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -381,9 +386,11 @@ func (ring *KeyRing) addEdge(a, b string) error {
 	vA := ring.ids[a]
 	vB := ring.ids[b]
 
-	ring.graph.SetEdge(simple.Edge{F: simple.Node(vA.id), T: simple.Node(vB.id)})
+	ring.graph.SetEdge(simple.Edge{F: vA, T: vB})
 	return nil
 }
+
+////////// Dot Formating of Key Ring
 
 // Marshals a keyring to a dot format, or nil if error
 func (ring KeyRing) Dot() *[]byte {
