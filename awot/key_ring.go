@@ -28,6 +28,10 @@ func (n Node) ID() int64 {
 	return int64(n.id)
 }
 
+func (n Node) DOTID() string {
+	return fmt.Sprintf("%s (%.2f)", n.name, n.probability)
+}
+
 // Key Ring implementation
 type KeyRing struct {
 	source       string
@@ -55,8 +59,8 @@ func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
 // Add an exchange message that could not be verified (lack of signer's key)
 func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
 	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
 	ring.pending.PushBack(msg)
-	ring.mutex.Unlock()
 }
 
 // Update the key ring with the given key and origin of the signature
@@ -274,11 +278,12 @@ func (ring *KeyRing) updatePending() {
 
 // Compute the probability of the node, independently of its current probability
 func (ring KeyRing) phi(name string) float32 {
-	// phi = min(1/d, rep)
-	nodename := name
 	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
 
-	destNode := ring.graph.Node(ring.ids[nodename].id)
+	// phi = min(1/d, rep)
+
+	destNode := ring.graph.Node(ring.ids[name].id)
 	sourceNode := ring.graph.Node(ring.ids[ring.source].id)
 
 	// compute the distance from source to destination
@@ -292,8 +297,6 @@ func (ring KeyRing) phi(name string) float32 {
 		distance = 1
 	}
 	phi := math.Min(1.0/distance, reputation)
-
-	ring.mutex.Unlock()
 
 	return float32(phi)
 }
@@ -417,7 +420,6 @@ func (ring KeyRing) Save(filename string) error {
 	title := fmt.Sprintf("%d", time.Now().Unix())
 	bytes, err := dot.Marshal(&(ring.graph), title, "", "", false)
 	if err != nil {
-		ring.mutex.Unlock()
 		return err
 	}
 	f := fmt.Sprintf("%s_%s.dot", path, title)
