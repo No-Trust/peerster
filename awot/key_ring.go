@@ -10,35 +10,28 @@ import (
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 	"io/ioutil"
+	"log"
 	"math"
 	"path/filepath"
 	"sync"
 	"time"
-	"log"
 )
 
-type nodeName string
-type nodeId int64
-
+// A Node in the key ring
 type Node struct {
-	id nodeId
+	name        string
+	id          int64
+	probability float32
 }
 
 func (n Node) ID() int64 {
 	return int64(n.id)
 }
 
-// A Node in the key ring
-type Vertex struct {
-	name        nodeName // name
-	id          nodeId   // id
-	probability float32  // probability
-}
-
 // Key Ring implementation
 type KeyRing struct {
-	source       nodeName
-	ids          map[nodeName]Vertex
+	source       string
+	ids          map[string]Node // name -> Node
 	graph        simple.DirectedGraph
 	keyTable     KeyTable   // for updates
 	pending      *list.List // pending keyExchangeMessage
@@ -80,7 +73,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 	err := ring.addEdge(sigOrigin, rec.Owner)
 
 	if err != nil {
-		log.Fatal("cannot add edge")
+		log.Fatal("KeyRing Add : could not add edge")
 	}
 
 	// recompute its probability
@@ -107,7 +100,8 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	keyTable := NewKeyTable(owner, key)
 
 	// map
-	ids := make(map[nodeName]Vertex)
+	ids := make(map[string]Node)
+
 	// create empty graph
 	graph := simple.NewDirectedGraph()
 
@@ -115,12 +109,12 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	source := graph.NewNode()
 	graph.AddNode(source)
 	// set id and name association in map
-	sourceV := Vertex{
-		name:        nodeName(owner),
-		id:          nodeId(source.ID()),
+	sourceV := Node{
+		name:        owner,
+		id:          source.ID(),
 		probability: 1.0,
 	}
-	ids[nodeName(owner)] = sourceV
+	ids[owner] = sourceV
 	// add key
 	keyTable.add(TrustedKeyRecord{
 		Record: KeyRecord{
@@ -136,17 +130,17 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		node := graph.NewNode()
 		graph.AddNode(node)
 		// set id and name association in map
-		nodeV := Vertex{
-			name:        nodeName(rec.Record.Owner),
-			id:          nodeId(node.ID()),
+		nodeV := Node{
+			name:        rec.Record.Owner,
+			id:          node.ID(),
 			probability: 1.0,
 		}
-		ids[nodeName(rec.Record.Owner)] = nodeV
+		ids[rec.Record.Owner] = nodeV
 
 		// add edge from source to new node
 
 		// add edge from source
-		source := ids[nodeName(owner)]
+		source := ids[owner]
 
 		graph.SetEdge(simple.Edge{F: simple.Node(source.id), T: simple.Node(nodeV.id)})
 
@@ -162,7 +156,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	}
 
 	ring := KeyRing{
-		source:       nodeName(owner),
+		source:       owner,
 		ids:          ids,
 		graph:        *graph,
 		keyTable:     keyTable,
@@ -170,9 +164,6 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		pendingMutex: &sync.Mutex{},
 		mutex:        &sync.Mutex{},
 	}
-
-	// TODO
-	ring.Save("ring")
 
 	go ring.worker()
 
@@ -208,13 +199,13 @@ func (ring *KeyRing) updateConfidence() {
 	// compute for each node
 	// for _, terminal := range ring.graph.Nodes() {
 	for terminalName, terminalVertex := range ring.ids {
-		terminal := ring.graph.Node(int64(terminalVertex.id))
+		terminal := ring.graph.Node(terminalVertex.id)
 		// get shortest paths from source to node
 		minpaths, _ := allShortest.AllBetween(source, terminal)
 		probability := ring.probabilityOfMinPaths(minpaths)
 
 		// update the key table
-		ring.keyTable.updateConfidence(string(terminalName), probability)
+		ring.keyTable.updateConfidence(terminalName, probability)
 	}
 }
 
@@ -281,11 +272,11 @@ func (ring *KeyRing) updatePending() {
 // Compute the probability of the node, independently of its current probability
 func (ring KeyRing) phi(name string) float32 {
 	// phi = min(1/d, rep)
-	nodename := nodeName(name)
+	nodename := name
 	ring.mutex.Lock()
 
-	destNode := ring.graph.Node(int64(ring.ids[nodename].id))
-	sourceNode := ring.graph.Node(int64(ring.ids[ring.source].id))
+	destNode := ring.graph.Node(ring.ids[nodename].id)
+	sourceNode := ring.graph.Node(ring.ids[ring.source].id)
 
 	// compute the distance from source to destination
 	shortest := path.DijkstraFrom(sourceNode, &ring.graph)
@@ -309,28 +300,27 @@ func (ring KeyRing) phi(name string) float32 {
 // It does not check if it exists in the key table
 func (ring KeyRing) contains(name string) bool {
 	ring.mutex.Lock()
-	nodename := nodeName(name)
-	_, present := ring.ids[nodename]
+	_, present := ring.ids[name]
 	ring.mutex.Unlock()
 	return present
 }
 
 // Return the vertice associated with the given node
-func (ring KeyRing) getVertex(node graph.Node) (Vertex, bool) {
+func (ring KeyRing) getVertex(node graph.Node) (Node, bool) {
 	ring.mutex.Lock()
 
 	for _, v := range ring.ids {
-		if int64(v.id) == node.ID() {
+		if v.id == node.ID() {
 			ring.mutex.Unlock()
 			return v, true
 		}
 	}
 
 	ring.mutex.Unlock()
-	return Vertex{}, false
+	return Node{}, false
 }
 
-func (ring KeyRing) lastNode() int64{
+func (ring KeyRing) lastNode() int64 {
 	maxId := int64(0)
 	nodes := ring.graph.Nodes()
 	for n := range nodes {
@@ -347,9 +337,8 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
-	nodename := nodeName(name)
 	// check if already in KeyRing
-	if vp, present := ring.ids[nodename]; present {
+	if vp, present := ring.ids[name]; present {
 		// update the probability
 		vp.probability = probability
 		return
@@ -361,9 +350,9 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	//node := ring.graph.NewNode()
 	node := simple.Node(ring.lastNode() + 1)
 	ring.graph.AddNode(node + 1)
-	ring.ids[nodename] = Vertex{
-		name:        nodename,
-		id:          nodeId(node.ID() + 1),
+	ring.ids[name] = Node{
+		name:        name,
+		id:          node.ID() + 1,
 		probability: probability,
 	}
 
@@ -375,12 +364,12 @@ func (ring *KeyRing) addEdge(a, b string) error {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
-	if _, aPresent := ring.ids[nodeName(a)]; !aPresent {
+	if _, aPresent := ring.ids[a]; !aPresent {
 		// a is not present
 		return errors.New("adding edge with source non present")
 	}
 
-	if _, bPresent := ring.ids[nodeName(b)]; !bPresent {
+	if _, bPresent := ring.ids[b]; !bPresent {
 		// a is not present
 		return errors.New("adding edge with destination non present")
 	}
@@ -389,11 +378,25 @@ func (ring *KeyRing) addEdge(a, b string) error {
 		return errors.New("adding edge between same vertices")
 	}
 
-	vA := ring.ids[nodeName(a)]
-	vB := ring.ids[nodeName(b)]
+	vA := ring.ids[a]
+	vB := ring.ids[b]
 
 	ring.graph.SetEdge(simple.Edge{F: simple.Node(vA.id), T: simple.Node(vB.id)})
 	return nil
+}
+
+// Marshals a keyring to a dot format, or nil if error
+func (ring KeyRing) Dot() *[]byte {
+	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
+
+	title := fmt.Sprintf("Key Ring -", time.Now().UTC().Format(time.RFC3339))
+
+	dot, err := dot.Marshal(&(ring.graph), title, "", "", false)
+	if err != nil {
+		return nil
+	}
+	return &dot
 }
 
 // Marshal the graph and write to file in dot format

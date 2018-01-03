@@ -125,12 +125,13 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 		// Update Request
 		cpy := g.peerSet.ToPeerSlice() // copy of the peerset
 		ids := g.routingTable.GetIds() // ids of peer with known route
-
+		dot := g.keyRing.Dot()
 		// sending
 		g.clientOutputQueue <- &common.Packet{
 			ClientPacket: common.ClientPacket{
 				ReachableNodes: &ids,
 				PeerSlice:      &cpy,
+				KeyRingDot:			dot,
 			},
 			Destination: *remoteaddr,
 		}
