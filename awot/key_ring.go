@@ -21,7 +21,7 @@ import (
 type Node struct {
 	name        string
 	id          int64
-	probability float32
+	probability *float32
 }
 
 func (n Node) ID() int64 {
@@ -29,13 +29,13 @@ func (n Node) ID() int64 {
 }
 
 func (n Node) DOTID() string {
-	return fmt.Sprintf("%s (%.2f)", n.name, n.probability)
+	return fmt.Sprintf("%s (%.2f)", n.name, *n.probability)
 }
 
 // Key Ring implementation
 type KeyRing struct {
 	source       string
-	ids          map[string]Node // name -> Node
+	ids          map[string]*Node // name -> Node
 	graph        simple.DirectedGraph
 	nextNode     int64
 	keyTable     KeyTable   // for updates
@@ -106,21 +106,22 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	nextNode := int64(0)
 
 	// map
-	ids := make(map[string]Node)
+	ids := make(map[string]*Node)
 
 	// create empty graph
 	graph := simple.NewDirectedGraph()
 
+	p := float32(1.0)
 	// add source to graph
 	source := Node{
 		name:        owner,
 		id:          nextNode,
-		probability: 1.0,
+		probability: &p,
 	}
 	nextNode += 1
 	graph.AddNode(source)
 	// set id and name association in map
-	ids[owner] = source
+	ids[owner] = &source
 	// add key
 	keyTable.add(TrustedKeyRecord{
 		Record: KeyRecord{
@@ -133,15 +134,16 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	// add each fully trusted key
 	for _, rec := range trustedRecords {
 		// add node to graph
+		p := float32(1.0)
 		node := Node{
 			name:        rec.Record.Owner,
 			id:          nextNode,
-			probability: 1.0,
+			probability: &p,
 		}
 		nextNode += 1
 		graph.AddNode(node)
 		// set id and name association in map
-		ids[rec.Record.Owner] = node
+		ids[rec.Record.Owner] = &node
 
 		// add edge from source to new node
 
@@ -317,7 +319,7 @@ func (ring KeyRing) getVertex(node graph.Node) (Node, bool) {
 
 	for _, v := range ring.ids {
 		if v.id == node.ID() {
-			return v, true
+			return *v, true
 		}
 	}
 
@@ -345,24 +347,21 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	// check if already in KeyRing
 	if vp, present := ring.ids[name]; present {
 		// update the probability
-		vp.probability = probability
+		*(vp.probability) = probability
 		return
 	}
 
 	//fmt.Println(ring.graph.Nodes())
 
 	// add to graph
-	//node := ring.graph.NewNode()
-	// node := simple.Node(ring.lastNode() + 1)
 	node := Node{
 		id:          ring.lastNode() + 1,
 		name:        name,
-		probability: probability,
+		probability: &probability,
 	}
-	// ring.graph.AddNode(node + 1)
-	// ring.nextNode += 1
+	ring.nextNode += 1
 	ring.graph.AddNode(node)
-	ring.ids[name] = node
+	ring.ids[name] = &node
 
 	return
 }
@@ -389,7 +388,7 @@ func (ring *KeyRing) addEdge(a, b string) error {
 	vA := ring.ids[a]
 	vB := ring.ids[b]
 
-	ring.graph.SetEdge(simple.Edge{F: vA, T: vB})
+	ring.graph.SetEdge(simple.Edge{F: *vA, T: *vB})
 	return nil
 }
 

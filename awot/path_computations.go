@@ -72,7 +72,7 @@ func (ring KeyRing) probabilityOfPath(path []graph.Node) float32 {
 			p = 0
 			log.Fatal("NODE DOES NOT EXISTS in ids !")
 		} else {
-			p = p * v.probability
+			p = p * *v.probability
 		}
 	}
 
