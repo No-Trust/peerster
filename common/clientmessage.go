@@ -22,7 +22,7 @@ type ClientPacket struct {
 	NewMessage        *NewMessage        // message sent from client or new message received (update client)
 	NewPrivateMessage *NewPrivateMessage // private message sent from client or new private message received (update client)
 	Notification      *string            // notification from gossiper to the client
-	KeyRingDot				*[]byte						 // DOT format of the key ring
+	KeyRingJSON				*[]byte						 // DOT format of the key ring
 }
 
 type NewMessage struct {

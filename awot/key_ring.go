@@ -3,6 +3,7 @@ package awot
 import (
 	"container/list"
 	"crypto/rsa"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gonum.org/v1/gonum/graph/encoding/dot"
@@ -362,7 +363,63 @@ func (ring *KeyRing) addEdge(a, b string) error {
 	return nil
 }
 
-////////// Dot Formating of Key Ring
+////////// Dot and JSON Formating of Key Ring
+
+type Vertex struct {
+	Name        string
+	Probability float32
+	Confidence  float32
+}
+
+type Edge struct {
+	Source string
+	Target string
+}
+
+type GraphViz struct {
+	Nodes []Vertex
+	Links []Edge
+}
+
+func (ring KeyRing) graphViz() GraphViz {
+	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
+
+	nodes := make([]Vertex, 0)
+	rnodes := ring.graph.Nodes()
+	for _, node := range rnodes {
+		n := node.(Node)
+		rec, _ := ring.GetRecord(n.name)
+		v := Vertex{
+			Name:        n.name,
+			Probability: *n.probability,
+			Confidence:  rec.Confidence,
+		}
+		nodes = append(nodes, v)
+	}
+
+	links := make([]Edge, 0)
+	redges := ring.graph.Edges()
+
+	for _, edge := range redges {
+		e := Edge{
+			Source: edge.From().(Node).name,
+			Target: edge.To().(Node).name,
+		}
+		links = append(links, e)
+	}
+
+	return GraphViz{
+		Nodes: nodes,
+		Links: links,
+	}
+}
+
+// Marshals a keyring to a json format {nodes: ..., edges: a->b}
+func (ring KeyRing) JSON() ([]byte, error) {
+	gviz := ring.graphViz()
+	return json.Marshal(gviz)
+}
 
 // Marshals a keyring to a dot format, or nil if error
 func (ring KeyRing) Dot() *[]byte {
