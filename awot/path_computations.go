@@ -1,7 +1,6 @@
 package awot
 
 import (
-	"fmt"
 	"gonum.org/v1/gonum/graph"
 )
 
@@ -35,7 +34,6 @@ func comb(paths []Path, t int) []Path {
 		with[i] = intersection([][]graph.Node{paths[0], with[i]})
 	}
 
-
 	without := comb(paths[1:], t)
 	return append(with, without...)
 }
@@ -43,7 +41,6 @@ func comb(paths []Path, t int) []Path {
 // Compute the probability of the given shortest paths, using the inclusion exclusion formula
 func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
 	// convert minpaths to []Path
-	fmt.Println("HEHO", len(minpaths))
 	minPaths := make([]Path, len(minpaths))
 	for i, v := range minpaths {
 		vp := v
@@ -53,7 +50,6 @@ func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
 		}
 		minPaths[i] = Path(vp)
 	}
-	fmt.Println("MIN PATHS \n", minPaths)
 
 	p := float32(0.0)
 
@@ -61,11 +57,9 @@ func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
 	for i := 1; i <= len(minPaths); i++ {
 		// get the possible paths of intersection of i paths in the n given
 		// n choose i such paths
-		fmt.Println("CONB : ", i, "\n")
 		npaths := comb(minPaths, i)
 		for _, path := range npaths {
 			pathP := ring.probabilityOfPath(path)
-			fmt.Println("** path :", path, "contributing", s * pathP)
 			p += s * pathP
 		}
 

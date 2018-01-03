@@ -213,11 +213,9 @@ func (ring *KeyRing) updateConfidence() {
 		// get shortest paths from source to node
 		minpaths, _ := allShortest.AllBetween(source, terminal)
 		probability := ring.probabilityOfMinPaths(minpaths)
-		fmt.Println("Updating s -> ", terminalName, "with p =", probability)
 		// update the key table
 		ring.keyTable.updateConfidence(terminalName, probability)
 	}
-	fmt.Println(">>> table \n", ring.keyTable)
 }
 
 // update key ring with given message, if update successful return true
@@ -233,12 +231,7 @@ func (ring *KeyRing) updateMessage(msg KeyExchangeMessage) bool {
 		KeyPub: receivedKey,
 	}
 
-	// fmt.Println("~~~ Update Message Pending for :", record.Owner, " signed by", msg.Origin)
-
 	kpub, present := ring.GetKey(msg.Origin)
-
-	//fmt.Println("~~~ key : ", kpub)
-	//fmt.Println("~~~ sig:\n", msg.Signature)
 
 	if !present {
 		// still do not have a public key
@@ -248,10 +241,8 @@ func (ring *KeyRing) updateMessage(msg KeyExchangeMessage) bool {
 
 	if err == nil {
 		ring.Add(record, msg.Origin)
-		// fmt.Println("~~~ Update successful ")
 		return true
 	}
-	// fmt.Println("~~~ Update un successful ")
 	return false
 }
 
@@ -260,14 +251,9 @@ func (ring *KeyRing) updatePending() {
 	ring.pendingMutex.Lock()
 	defer ring.pendingMutex.Unlock()
 
-	i := 1
 	toRemove := list.New()
 	for e := ring.pending.Front(); e != nil; e = e.Next() {
 
-		// fmt.Println("~~~ Update # ", i)
-		i += 1
-
-		// check the origin against the key table
 		msg := e.Value.(KeyExchangeMessage)
 
 		if ring.updateMessage(msg) {
@@ -294,8 +280,6 @@ func (ring KeyRing) phi(name string) float32 {
 	shortest := path.DijkstraFrom(sourceNode, &ring.graph)
 	distance := shortest.WeightTo(destNode)
 
-	// fmt.Println("--- DISTANCE from %s to %s = %f", ring.source, name, distance)
-
 	reputation := 1.0 // TODO !!!
 	if distance == 0 {
 		distance = 1
@@ -313,22 +297,6 @@ func (ring KeyRing) contains(name string) bool {
 	_, present := ring.ids[name]
 	return present
 }
-
-
-//
-// // Return the vertice associated with the given node
-// func (ring KeyRing) getVertex(node graph.Node) (Node, bool) {
-// 	ring.mutex.Lock()
-// 	defer ring.mutex.Unlock()
-//
-// 	for _, v := range ring.ids {
-// 		if v.id == node.ID() {
-// 			return *v, true
-// 		}
-// 	}
-//
-// 	return Node{}, false
-// }
 
 // Return the id of the noden with highest id
 func (ring KeyRing) lastNode() int64 {
@@ -354,8 +322,6 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 		*(vp.probability) = probability
 		return
 	}
-
-	//fmt.Println(ring.graph.Nodes())
 
 	// add to graph
 	node := Node{
