@@ -1,24 +1,33 @@
 package awot
 
 import (
+	"fmt"
 	"gonum.org/v1/gonum/graph"
-	"log"
 )
 
 type Path []graph.Node
 
-func (p Path) toArray() []graph.Node {
+func (p Path) toNodeArray() []graph.Node {
 	return []graph.Node(p)
+}
+func toPathArray(paths []Path) [][]graph.Node {
+	r := make([][]graph.Node, len(paths))
+	for i, p := range paths {
+		r[i] = p.toNodeArray()
+	}
+	return r
 }
 
 // Return all the intersections of any t paths in given paths
 func comb(paths []Path, t int) []Path {
-
-	if t == len(paths) {
-		return paths
-	}
 	if t == 0 {
-		return []Path{}
+		return []Path{Path{}}
+	}
+	if len(paths) == 0 {
+		return []Path{Path{}}
+	}
+	if len(paths) == t {
+		return []Path{intersection(toPathArray(paths))}
 	}
 
 	with := comb(paths[1:], t-1)
@@ -26,54 +35,53 @@ func comb(paths []Path, t int) []Path {
 		with[i] = intersection([][]graph.Node{paths[0], with[i]})
 	}
 
-	without := comb(paths[1:], t)
 
+	without := comb(paths[1:], t)
 	return append(with, without...)
 }
 
 // Compute the probability of the given shortest paths, using the inclusion exclusion formula
 func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
-  // convert minpaths to []Path
-  minPaths := make([]Path, len(minpaths))
-  for i, v := range minpaths {
-    minPaths[i] = Path(v)
-  }
+	// convert minpaths to []Path
+	fmt.Println("HEHO", len(minpaths))
+	minPaths := make([]Path, len(minpaths))
+	for i, v := range minpaths {
+		vp := v
+		// remove last element (target)
+		if len(v) > 0 {
+			vp = v[:len(v)-1]
+		}
+		minPaths[i] = Path(vp)
+	}
+	fmt.Println("MIN PATHS \n", minPaths)
 
 	p := float32(0.0)
 
-	n := len(minPaths)
 	s := float32(1.0)
-	for i := 0; i < n; i++ {
+	for i := 1; i <= len(minPaths); i++ {
 		// get the possible paths of intersection of i paths in the n given
 		// n choose i such paths
+		fmt.Println("CONB : ", i, "\n")
 		npaths := comb(minPaths, i)
 		for _, path := range npaths {
-			p += s * ring.probabilityOfPath(path)
+			pathP := ring.probabilityOfPath(path)
+			fmt.Println("** path :", path, "contributing", s * pathP)
+			p += s * pathP
 		}
 
 		s = -s
 	}
 
-  return p
+	return p
 }
 
 // Compute the probability of the given path
 func (ring KeyRing) probabilityOfPath(path []graph.Node) float32 {
 	p := float32(1.0)
 
-	for i, node := range path {
-		if i == 0 || i == len(path) {
-			// do not include source nor terminal
-			continue
-		}
-
-		v, present := ring.getVertex(node)
-		if !present {
-			p = 0
-			log.Fatal("NODE DOES NOT EXISTS in ids !")
-		} else {
-			p = p * *v.probability
-		}
+	for _, node := range path {
+		v := node.(Node)
+		p = p * (*(v.probability))
 	}
 
 	return p

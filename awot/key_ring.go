@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
@@ -29,7 +28,9 @@ func (n Node) ID() int64 {
 }
 
 func (n Node) DOTID() string {
-	return fmt.Sprintf("%s (%.2f)", n.name, *n.probability)
+	p := *n.probability
+	percent := int(p * 100)
+	return fmt.Sprintf("%s_%d", n.name, percent)
 }
 
 // Key Ring implementation
@@ -204,7 +205,7 @@ func (ring *KeyRing) updateConfidence() {
 
 	allShortest := path.DijkstraAllPaths(&ring.graph)
 
-	source := ring.graph.Node(int64(ring.ids[ring.source].id))
+	source := ring.graph.Node(ring.ids[ring.source].id)
 
 	// compute for each node
 	for terminalName, terminalVertex := range ring.ids {
@@ -212,10 +213,11 @@ func (ring *KeyRing) updateConfidence() {
 		// get shortest paths from source to node
 		minpaths, _ := allShortest.AllBetween(source, terminal)
 		probability := ring.probabilityOfMinPaths(minpaths)
-
+		fmt.Println("Updating s -> ", terminalName, "with p =", probability)
 		// update the key table
 		ring.keyTable.updateConfidence(terminalName, probability)
 	}
+	fmt.Println(">>> table \n", ring.keyTable)
 }
 
 // update key ring with given message, if update successful return true
@@ -312,19 +314,21 @@ func (ring KeyRing) contains(name string) bool {
 	return present
 }
 
-// Return the vertice associated with the given node
-func (ring KeyRing) getVertex(node graph.Node) (Node, bool) {
-	ring.mutex.Lock()
-	defer ring.mutex.Unlock()
 
-	for _, v := range ring.ids {
-		if v.id == node.ID() {
-			return *v, true
-		}
-	}
-
-	return Node{}, false
-}
+//
+// // Return the vertice associated with the given node
+// func (ring KeyRing) getVertex(node graph.Node) (Node, bool) {
+// 	ring.mutex.Lock()
+// 	defer ring.mutex.Unlock()
+//
+// 	for _, v := range ring.ids {
+// 		if v.id == node.ID() {
+// 			return *v, true
+// 		}
+// 	}
+//
+// 	return Node{}, false
+// }
 
 // Return the id of the noden with highest id
 func (ring KeyRing) lastNode() int64 {
