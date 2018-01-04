@@ -366,6 +366,7 @@ func (ring *KeyRing) addEdge(a, b string) error {
 ////////// Dot and JSON Formating of Key Ring
 
 type Vertex struct {
+	Index       int64
 	Name        string
 	Probability float32
 	Confidence  float32
@@ -391,6 +392,7 @@ func (ring KeyRing) graphViz() GraphViz {
 		n := node.(Node)
 		rec, _ := ring.GetRecord(n.name)
 		v := Vertex{
+			Index:       n.ID(),
 			Name:        n.name,
 			Probability: *n.probability,
 			Confidence:  rec.Confidence,
