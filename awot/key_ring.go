@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
@@ -23,6 +24,17 @@ type Node struct {
 	id          int64
 	probability *float32
 }
+
+type Edge struct {
+	F, T Node
+	Key  rsa.PublicKey
+}
+
+// From returns the from-node of the edge.
+func (e Edge) From() graph.Node { return e.F }
+
+// To returns the to-node of the edge.
+func (e Edge) To() graph.Node { return e.T }
 
 func (n Node) ID() int64 {
 	return int64(n.id)
@@ -73,11 +85,16 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 		return
 	}
 
+	if rec.Owner == sigOrigin {
+		// self signed record
+		return
+	}
+
 	// add owner of the key if not yet known, or update its probability
 	ring.addNode(rec.Owner, 0.0)
 
 	// add edge
-	err := ring.addEdge(sigOrigin, rec.Owner)
+	err := ring.addEdge(sigOrigin, rec.Owner, rec.KeyPub)
 
 	if err != nil {
 		log.Fatal("KeyRing Add : could not add edge")
@@ -150,9 +167,10 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		// add edge from source to new node
 
 		// add edge from source
-		edge := simple.Edge{
+		edge := Edge{
 			F: source,
 			T: node,
+			Key: rec.Record.KeyPub,
 		}
 		graph.SetEdge(edge)
 
@@ -213,10 +231,77 @@ func (ring *KeyRing) updateConfidence() {
 		terminal := ring.graph.Node(terminalVertex.id)
 		// get shortest paths from source to node
 		minpaths, _ := allShortest.AllBetween(source, terminal)
+		fmt.Println("PATHS for : ", terminalName, "\n", minpaths)
+		minpaths = ring.selectBestPaths(minpaths)
+		fmt.Println("BEST for : ", terminalName, "\n", minpaths)
 		probability := ring.probabilityOfMinPaths(minpaths)
 		// update the key table
 		ring.keyTable.updateConfidence(terminalName, probability)
 	}
+}
+
+// selectBestPaths takes some paths and return a subset of them wich all corresponds to the same end public key
+// the key chosen is the one corresponding to the maximum number of paths
+// Warning : thread unsafe
+func (ring KeyRing) selectBestPaths(paths [][]graph.Node) [][]graph.Node {
+
+	if len(paths) < 2 {
+		// nothing to do
+		return paths
+	}
+
+	occurences := make(map[string]int)
+
+	// the paths ends with the terminal
+	// use the last edge if exists
+
+	for _, p := range paths {
+		if len(p) < 2 {
+			// siging itself should not happen
+			continue
+		}
+		s := p[len(p)-2]
+		t := p[len(p)-1]
+
+		edge := ring.graph.Edge(s,t)
+		if edge == nil {
+			log.Fatal("edge disapeared")
+		}
+		key := edge.(Edge).Key
+		occurences[key.N.String() + "-" + string(key.E)] += 1
+	}
+
+
+	// find max
+	max := 0
+	var bkey string
+	for key, occ := range occurences {
+		if occ > max {
+			max = occ
+			bkey = key
+		}
+	}
+
+	bestPaths := make([][]graph.Node, 0)
+
+	for _, p := range paths {
+		if len(p) < 2 {
+			continue
+		}
+		s := p[len(p)-2]
+		t := p[len(p)-1]
+
+		edge := ring.graph.Edge(s,t)
+		if edge == nil {
+			log.Fatal("edge disapeared")
+		}
+		key := edge.(Edge).Key
+		if bkey == key.N.String() + "-" + string(key.E) {
+			bestPaths = append(bestPaths, p)
+		}
+	}
+
+	return bestPaths
 }
 
 // update key ring with given message, if update successful return true
@@ -338,7 +423,7 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 }
 
 // Add a directed edge from a to b
-func (ring *KeyRing) addEdge(a, b string) error {
+func (ring *KeyRing) addEdge(a, b string, key rsa.PublicKey) error {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
@@ -359,39 +444,39 @@ func (ring *KeyRing) addEdge(a, b string) error {
 	vA := ring.ids[a]
 	vB := ring.ids[b]
 
-	ring.graph.SetEdge(simple.Edge{F: *vA, T: *vB})
+	ring.graph.SetEdge(Edge{F: *vA, T: *vB, Key: key})
 	return nil
 }
 
 ////////// Dot and JSON Formating of Key Ring
 
-type Vertex struct {
+type VertexViz struct {
 	Index       int64
 	Name        string
 	Probability float32
 	Confidence  float32
 }
 
-type Edge struct {
+type EdgeViz struct {
 	Source string
 	Target string
 }
 
 type GraphViz struct {
-	Nodes []Vertex
-	Links []Edge
+	Nodes []VertexViz
+	Links []EdgeViz
 }
 
 func (ring KeyRing) graphViz() GraphViz {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
-	nodes := make([]Vertex, 0)
+	nodes := make([]VertexViz, 0)
 	rnodes := ring.graph.Nodes()
 	for _, node := range rnodes {
 		n := node.(Node)
 		rec, _ := ring.GetRecord(n.name)
-		v := Vertex{
+		v := VertexViz{
 			Index:       n.ID(),
 			Name:        n.name,
 			Probability: *n.probability,
@@ -400,11 +485,11 @@ func (ring KeyRing) graphViz() GraphViz {
 		nodes = append(nodes, v)
 	}
 
-	links := make([]Edge, 0)
+	links := make([]EdgeViz, 0)
 	redges := ring.graph.Edges()
 
 	for _, edge := range redges {
-		e := Edge{
+		e := EdgeViz{
 			Source: edge.From().(Node).name,
 			Target: edge.To().(Node).name,
 		}
