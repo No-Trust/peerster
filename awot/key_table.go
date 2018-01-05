@@ -50,13 +50,25 @@ func (table KeyTable) get(name string) (TrustedKeyRecord, bool) {
 }
 
 // Update the confidence of association key - peer, with peer's name given
-// If the association does not exist yet, do nothing
-func (table *KeyTable) updateConfidence(name string, confidence float32) {
+// If the association does not exist yet, do nothing if the key is not present
+// If a key is given, overwrites present key
+func (table *KeyTable) updateConfidence(name string, confidence float32, key *rsa.PublicKey) {
 	table.mutex.Lock()
 	r, present := table.db[name]
 	if present {
+		if key != nil {
+			r.Record.KeyPub = *key
+		}
 		r.Confidence = confidence
 		table.db[name] = r
+	} else if key != nil {
+		table.db[name] = TrustedKeyRecord {
+			Record: KeyRecord {
+				Owner: name,
+				KeyPub: *key,
+			},
+			Confidence: confidence,
+		}
 	}
 	table.mutex.Unlock()
 }

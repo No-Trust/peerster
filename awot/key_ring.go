@@ -107,13 +107,13 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 	ring.addNode(rec.Owner, probability)
 
 	// save key with "unknown" confidence, that will be computed after
-	ring.keyTable.add(TrustedKeyRecord{
-		Record:     rec,
-		Confidence: float32(0.0),
-	})
+	// ring.keyTable.add(TrustedKeyRecord{
+	// 	Record:     rec,
+	// 	Confidence: float32(0.0),
+	// })
 
 	// // recompute the confidence of the keys
-	// ring.update()
+	ring.updateConfidence()
 }
 
 // Create a new key-ring with given fully trusted origin-public key pairs
@@ -168,8 +168,8 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 
 		// add edge from source
 		edge := Edge{
-			F: source,
-			T: node,
+			F:   source,
+			T:   node,
 			Key: rec.Record.KeyPub,
 		}
 		graph.SetEdge(edge)
@@ -232,22 +232,34 @@ func (ring *KeyRing) updateConfidence() {
 		// get shortest paths from source to node
 		minpaths, _ := allShortest.AllBetween(source, terminal)
 		fmt.Println("PATHS for : ", terminalName, "\n", minpaths)
-		minpaths = ring.selectBestPaths(minpaths)
+		minpaths, bestKey := ring.selectBestPaths(minpaths)
 		fmt.Println("BEST for : ", terminalName, "\n", minpaths)
 		probability := ring.probabilityOfMinPaths(minpaths)
 		// update the key table
-		ring.keyTable.updateConfidence(terminalName, probability)
+		ring.keyTable.updateConfidence(terminalName, probability, bestKey)
 	}
 }
 
 // selectBestPaths takes some paths and return a subset of them wich all corresponds to the same end public key
 // the key chosen is the one corresponding to the maximum number of paths
 // Warning : thread unsafe
-func (ring KeyRing) selectBestPaths(paths [][]graph.Node) [][]graph.Node {
+func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.PublicKey) {
+	if len(paths) == 0 {
+		return paths, nil
+	} else if len(paths) == 1 {
+		p := paths[0]
+		if len(p) < 2 {
+			return paths, nil
+		}
+		s := p[len(p)-2]
+		t := p[len(p)-1]
 
-	if len(paths) < 2 {
-		// nothing to do
-		return paths
+		edge := ring.graph.Edge(s, t)
+		if edge == nil {
+			log.Fatal("edge disapeared")
+		}
+		key := edge.(Edge).Key
+		return paths, &key
 	}
 
 	occurences := make(map[string]int)
@@ -263,14 +275,13 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) [][]graph.Node {
 		s := p[len(p)-2]
 		t := p[len(p)-1]
 
-		edge := ring.graph.Edge(s,t)
+		edge := ring.graph.Edge(s, t)
 		if edge == nil {
 			log.Fatal("edge disapeared")
 		}
 		key := edge.(Edge).Key
-		occurences[key.N.String() + "-" + string(key.E)] += 1
+		occurences[key.N.String()+"-"+string(key.E)] += 1
 	}
-
 
 	// find max
 	max := 0
@@ -283,7 +294,7 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) [][]graph.Node {
 	}
 
 	bestPaths := make([][]graph.Node, 0)
-
+	var bestKey rsa.PublicKey
 	for _, p := range paths {
 		if len(p) < 2 {
 			continue
@@ -291,17 +302,18 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) [][]graph.Node {
 		s := p[len(p)-2]
 		t := p[len(p)-1]
 
-		edge := ring.graph.Edge(s,t)
+		edge := ring.graph.Edge(s, t)
 		if edge == nil {
 			log.Fatal("edge disapeared")
 		}
 		key := edge.(Edge).Key
-		if bkey == key.N.String() + "-" + string(key.E) {
+		if bkey == key.N.String()+"-"+string(key.E) {
 			bestPaths = append(bestPaths, p)
+			bestKey = key
 		}
 	}
 
-	return bestPaths
+	return bestPaths, &bestKey
 }
 
 // update key ring with given message, if update successful return true
