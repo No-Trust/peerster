@@ -10,7 +10,6 @@ type Parameters struct {
 	Name                 string      // name of this node
 	Etimer               uint        // rate of anti entropy
 	Rtimer               uint        // rate of route rumors
-	Ktimer               uint        // rate of key exchange messages
 	Reptimer             uint        // rate of reputation update requests
 	Hoplimit             uint32      // TTL for the sending of private messages
 	NoForward            bool        // for testing : if set, does not forward any packet except route rumors
