@@ -22,7 +22,7 @@ type ClientPacket struct {
 	NewMessage        *NewMessage        // message sent from client or new message received (update client)
 	NewPrivateMessage *NewPrivateMessage // private message sent from client or new private message received (update client)
 	Notification      *string            // notification from gossiper to the client
-	KeyRingJSON				*[]byte						 // JSON format of the key ring
+	KeyRingJSON       *[]byte            // JSON format of the key ring
 }
 
 type NewMessage struct {
@@ -48,4 +48,5 @@ type FileRequest struct {
 	MetaHash    []byte
 	Destination string
 	FileName    string
+	Origin      *string // request a file with origin
 }

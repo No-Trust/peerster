@@ -14,8 +14,8 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"github.com/dedis/protobuf"
 	"github.com/No-Trust/peerster/common"
+	"github.com/dedis/protobuf"
 	"net"
 )
 
@@ -26,7 +26,7 @@ func main() {
 	dest := flag.String("Dest", "", "destination for a private message")
 	filename := flag.String("file", "", "file to be indexed")
 	request := flag.String("request", "", "metahash of the file to download")
-
+	origin := flag.String("origin", "", "origin of the file to download")
 	flag.Parse()
 
 	pkt := common.ClientPacket{}
@@ -50,6 +50,7 @@ func main() {
 				MetaHash:    metahash,
 				Destination: *dest,
 				FileName:    *filename,
+				Origin:      origin,
 			}
 
 		} else {
@@ -108,34 +109,34 @@ func main() {
 	// wait if needed
 
 	/*
-	if pkt.FileRequest != nil {
-		goon := true
+		if pkt.FileRequest != nil {
+			goon := true
 
-		for goon {
-			// wait for the notifications
-			buf := make([]byte, 65535) // receiving byte array
-			_, _, err := Conn.ReadFromUDP(buf)
-			if err != nil {
-				continue
-			}
-
-			var pkt common.ClientPacket
-			err = protobuf.Decode(buf, &pkt)
-			if err != nil {
-				continue
-			}
-
-			if pkt.Notification != nil {
-				fmt.Println(*pkt.Notification)
-
-				// check if last one
-				if (*pkt.Notification)[:13] == "RECONSTRUCTED" {
-					goon = false
+			for goon {
+				// wait for the notifications
+				buf := make([]byte, 65535) // receiving byte array
+				_, _, err := Conn.ReadFromUDP(buf)
+				if err != nil {
+					continue
 				}
-			}
 
+				var pkt common.ClientPacket
+				err = protobuf.Decode(buf, &pkt)
+				if err != nil {
+					continue
+				}
+
+				if pkt.Notification != nil {
+					fmt.Println(*pkt.Notification)
+
+					// check if last one
+					if (*pkt.Notification)[:13] == "RECONSTRUCTED" {
+						goon = false
+					}
+				}
+
+			}
 		}
-	}
 	*/
 
 }
