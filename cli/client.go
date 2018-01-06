@@ -31,6 +31,10 @@ func main() {
 
 	pkt := common.ClientPacket{}
 
+	if *origin == "" {
+		origin = nil
+	}
+
 	if *filename != "" {
 		if *request != "" {
 			// this is a file request
