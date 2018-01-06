@@ -44,8 +44,10 @@ func (msg *RumorMessage) RumorString(source *net.UDPAddr) *string {
 
 func (msg *RumorMessage) MongeringString(dest net.UDPAddr) *string {
 	rumorType := "TEXT"
-	if msg.Text == "" {
+	if msg.isRoute() == true {
 		rumorType = "ROUTE"
+	} else if msg.isKeyExchange() == true {
+		rumorType = "KEY RECORD"
 	}
 	str := fmt.Sprintf("MONGERING %s with %s:%s", rumorType, dest.IP.String(), strconv.Itoa(dest.Port))
 	return &str
@@ -111,5 +113,10 @@ func KeyExchangeReceiveString(owner string, from net.UDPAddr, valid bool) *strin
 	} else {
 		str += " INVALID"
 	}
+	return &str
+}
+func KeyExchangeReceiveUnverifiedString(owner string, signer string, from net.UDPAddr) *string {
+	str := fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s signed by %s from %s:%s", owner, signer, from.IP.String(), strconv.Itoa(from.Port))
+	str += " UNVERIFIED"
 	return &str
 }

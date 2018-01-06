@@ -11,8 +11,8 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"time"
 	"sync"
+	"time"
 )
 
 var UIPort *uint
@@ -97,6 +97,8 @@ func main() {
 	r.HandleFunc("/private-message", getPrivateMessagesHandler).Methods("GET") // request new private messages
 	r.HandleFunc("/node", getNodesHandler).Methods("GET")                      // request update on nodes
 	r.HandleFunc("/reachable-node", getReachableNodesHandler).Methods("GET")   // request update on reachable nodes
+	r.HandleFunc("/keyring", getRingHandler).Methods("GET")                       // request ring
+	r.HandleFunc("/ring.json", getRingJSONHandler).Methods("GET")                       // request ring json
 
 	http.Handle("/", r)
 
@@ -151,6 +153,10 @@ func handleServerMessage(buf []byte, remoteaddr *net.UDPAddr) {
 	if pkt.Notification != nil {
 		// send notification to client
 	}
+	if pkt.KeyRingJSON != nil {
+		// write json
+		writeKeyRing(*pkt.KeyRingJSON)
+	}
 
 }
 
@@ -187,6 +193,21 @@ func getReachableNodesHandler(w http.ResponseWriter, r *http.Request) {
 	common.CheckError(err)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(buf)
+}
+
+func getRingJSONHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadFile("public/ring.json")
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		w.Write(nil)
+	} else {
+		w.Write(bytes)
+	}
+	// http.ServeFile(w, r, "public/ring.json")
+}
+
+func getRingHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "public/ring.html")
 }
 
 func cssHandler(w http.ResponseWriter, r *http.Request) {
@@ -305,4 +326,8 @@ func sendMessageHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	}
+}
+
+func writeKeyRing(bytes []byte) error {
+	return ioutil.WriteFile("public/ring.json", bytes, 0644)
 }

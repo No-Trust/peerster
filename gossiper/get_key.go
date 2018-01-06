@@ -53,8 +53,8 @@ func getKey(pubKeyFilename, filename string) rsa.PrivateKey {
 
 // Construct a list of keyrecords from a directory where public keys are stored
 // Implicitely the name of the owner of each public key is the file name (without .pem extension)
-func getPublicKeysFromDirectory(dir string, except string) []awot.KeyRecord {
-	records := make([]awot.KeyRecord, 0)
+func getPublicKeysFromDirectory(dir string, except string) []awot.TrustedKeyRecord {
+	records := make([]awot.TrustedKeyRecord, 0)
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -90,18 +90,21 @@ func getPublicKeysFromDirectory(dir string, except string) []awot.KeyRecord {
 					// construct record using name of file as owner
 					record := awot.KeyRecord{
 						Owner:  name,
-						KeyPub: 	*original,
+						KeyPub: *original,
+					}
+
+					trec := awot.TrustedKeyRecord{
+						Record:     record,
+						Confidence: float32(1.0),
 					}
 
 					// add record
-					records = append(records, record)
+					records = append(records, trec)
 				}
 			}
 		}
 	}
 
-	// fmt.Println("RECORDS")
-	// fmt.Println(records)
 	return records
 }
 

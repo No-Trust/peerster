@@ -16,12 +16,11 @@ func TestSigningExchangeMessage(t *testing.T) {
 	}
 
 	r1 := TrustedKeyRecord{
-		record: KeyRecord{
+		Record: KeyRecord{
 			Owner:  "node1",
 			KeyPub: r1K.PublicKey,
 		},
-		confidence:         1.0,
-		keyExchangeMessage: nil,
+		Confidence:         1.0,
 	}
 
 	table.add(r1)
@@ -54,7 +53,7 @@ func TestAddRetrieveRemove(t *testing.T) {
 	}
 
 	r1 := TrustedKeyRecord{
-		record: KeyRecord{
+		Record: KeyRecord{
 			Owner:  "node1",
 			KeyPub: r1K.PublicKey,
 		},
@@ -71,7 +70,7 @@ func TestAddRetrieveRemove(t *testing.T) {
 		t.Errorf("keys are different")
 	}
 
-	table.remove(r1.record.Owner)
+	table.remove(r1.Record.Owner)
 
 	_, present = table.getKey("node1")
 

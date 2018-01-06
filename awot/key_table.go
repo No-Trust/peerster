@@ -16,7 +16,7 @@ type KeyTable struct {
 // Add a record to the key table, overwrites it if it already exists
 func (table *KeyTable) add(rec TrustedKeyRecord) {
 	table.mutex.Lock()
-	table.db[rec.record.Owner] = rec
+	table.db[rec.Record.Owner] = rec
 	table.mutex.Unlock()
 }
 
@@ -31,11 +31,11 @@ func (table *KeyTable) remove(owner string) {
 func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
 	table := newKeyTable()
 	table.add(TrustedKeyRecord {
-		record: KeyRecord {
+		Record: KeyRecord {
 			Owner: owner,
 			KeyPub: key,
 		},
-		confidence: 1.0, // confidence 100%
+		Confidence: 1.0, // confidence 100%
 	})
 
 	return table
@@ -50,13 +50,25 @@ func (table KeyTable) get(name string) (TrustedKeyRecord, bool) {
 }
 
 // Update the confidence of association key - peer, with peer's name given
-// If the association does not exist yet, do nothing
-func (table *KeyTable) updateConfidence(name string, confidence float32) {
+// If the association does not exist yet, do nothing if the key is not present
+// If a key is given, overwrites present key
+func (table *KeyTable) updateConfidence(name string, confidence float32, key *rsa.PublicKey) {
 	table.mutex.Lock()
 	r, present := table.db[name]
 	if present {
-		r.confidence = confidence
+		if key != nil {
+			r.Record.KeyPub = *key
+		}
+		r.Confidence = confidence
 		table.db[name] = r
+	} else if key != nil {
+		table.db[name] = TrustedKeyRecord {
+			Record: KeyRecord {
+				Owner: name,
+				KeyPub: *key,
+			},
+			Confidence: confidence,
+		}
 	}
 	table.mutex.Unlock()
 }
@@ -64,7 +76,7 @@ func (table *KeyTable) updateConfidence(name string, confidence float32) {
 // Return the key of peer with given name and true if it exists, otherwise return false
 func (table KeyTable) getKey(name string) (rsa.PublicKey, bool) {
 	rec, present := table.get(name)
-	return rec.record.KeyPub, present
+	return rec.Record.KeyPub, present
 }
 
 // Create an empty KeyTable
@@ -82,7 +94,7 @@ func (table *KeyTable) getTrustedKeys(priK rsa.PrivateKey, origin string) []Trus
 	table.mutex.Lock()
 
 	for i, val := range table.db {
-		if val.confidence >= 1.0 {
+		if val.Confidence >= 1.0 {
 
 			// sign key
 			if val.keyExchangeMessage == nil {

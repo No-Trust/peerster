@@ -6,54 +6,48 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"fmt"
 	"github.com/No-Trust/peerster/common"
 )
 
 type KeyExchangeMessage struct {
-	KeyRecord KeyRecord // association (public-key, owner)
-	Origin    string    // origin of the signature
-	signature []byte    // signature of keyPub by owner
+	KeyBytes  []byte // serialized public key
+	Owner     string // owner of the public key
+	Origin    string // signer
+	Signature []byte // signature of (keyPub <-> owner)
 }
 
 // Verifies that the received message is signed by the pretended origin
 // Return nil if valid, an error otherwise
 func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
-	str := fmt.Sprintf("%v", msg.KeyRecord)
-	data := []byte(str)
-
-	hash := crypto.SHA256
+	data := append(msg.KeyBytes, []byte(msg.Owner)...)
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
-
 	var opts rsa.PSSOptions
 	opts.SaltLength = rsa.PSSSaltLengthAuto
-
-	return rsa.VerifyPSS(&OriginKeyPub, hash, hashed, msg.signature, &opts)
+	return rsa.VerifyPSS(&OriginKeyPub, crypto.SHA256, hashed, msg.Signature, nil) //&opts)
 }
 
 // Create a KeyExchangeMessage by signing the public key record, using given private key and attach own's name to the signature
 // Return the new KeyExchangeMessage
-func create(keyRecord KeyRecord, ownPrivateKey rsa.PrivateKey, origin string) KeyExchangeMessage {
-	str := fmt.Sprintf("%v", keyRecord)
-	data := []byte(str)
+func create(keybytes []byte, owner string, ownPrivateKey rsa.PrivateKey, origin string) KeyExchangeMessage {
 
-	hash := crypto.SHA256
+	data := append(keybytes, []byte(owner)...)
+
 	newhash := sha256.New()
 	newhash.Write(data)
 	hashed := newhash.Sum(nil)
 
 	var opts rsa.PSSOptions
 	opts.SaltLength = rsa.PSSSaltLengthAuto
-
-	signature, err := rsa.SignPSS(rand.Reader, &ownPrivateKey, hash, hashed, &opts)
+	signature, err := rsa.SignPSS(rand.Reader, &ownPrivateKey, crypto.SHA256, hashed, nil) //&opts)
 	common.CheckError(err)
 
 	msg := KeyExchangeMessage{
-		KeyRecord: keyRecord,
+		KeyBytes:  keybytes,
+		Owner:     owner,
 		Origin:    origin,
-		signature: signature,
+		Signature: signature,
 	}
 
 	return msg

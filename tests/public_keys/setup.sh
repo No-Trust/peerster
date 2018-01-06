@@ -7,6 +7,8 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 DEBUG="false"
 
+mkdir -p keys
+
 cd ../../gossiper
 go build
 cd ../cli
@@ -69,4 +71,3 @@ fail(){
 	echo -e "${RED}*** Failed test $1 ***${NC}"
   exit 1
 }
-

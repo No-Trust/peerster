@@ -49,15 +49,28 @@ func TestKeyExchangeSigning(t *testing.T) {
 		t.Errorf("Could not create private key")
 	}
 
-	record := KeyRecord{
+	recordForB := KeyRecord{
 		Owner:  B,
 		KeyPub: keyB.PublicKey,
 	}
 
 	// A signs B's key
-	msg := create(record, *keyA, A)
+	msg := create(recordForB, *keyA, A)
 
 	// check that the signature is correct
+	err = Verify(msg, keyA.PublicKey)
+
+	if err != nil {
+		t.Errorf("Signature of message is wrong")
+	}
+
+	trustedRecordForB := TrustedKeyRecord{
+		Record:     recordForB,
+		Confidence: 1.0,
+	}
+
+	msg = trustedRecordForB.GetMessage(*keyA, A)
+
 	err = Verify(msg, keyA.PublicKey)
 
 	if err != nil {
