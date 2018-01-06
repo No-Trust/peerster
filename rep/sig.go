@@ -17,11 +17,30 @@ import (
  */
 func (table *ReputationTable) GetSigRep(peer *common.Peer) (/*rep*/ float32, /*ok*/ bool) {
 
+  table.mutex.Lock()
+
   // Get the reputation from the table
   rep, ok := table.sigReps[peer]
 
+  table.mutex.Unlock()
+
   // Return the reputation
   return rep, ok
+
+}
+
+/**
+ * Performs an operation for each entry in the signature-based
+ * reputation table. The operation is defined as a callback
+ * function that takes a peer and a reputation as parameters.
+ */
+func (table *ReputationTable) ForEachSigRep(callback func(/*peer*/ *common.Peer, /*rep*/ float32)) {
+
+  // Loop through the entries
+  for peer, rep := range table.sigReps {
+    // Call the given callback for each (peer, rep) pair
+    callback(peer, rep)
+  }
 
 }
 
@@ -37,17 +56,27 @@ func (table *ReputationTable) UpdateSigRep(peer *common.Peer) {
   correctSig := true
   var confidence float32 = 1
 
+  table.mutex.Lock()
+
+  // If the signature is correct, increase the reputation
+  // of the sending peer linearly by a factor that depends
+  // on the confidence level in the public key association
   if correctSig {
 
-    table.sigReps[peer] = common.Clamp(table.sigReps[peer] +
+    table.sigReps[peer] = common.ClampFloat32(table.sigReps[peer] +
       sigRepIncreaseFactor(confidence), MIN_REP, MAX_REP)
 
+  // Otherwise, decrease the reputation of the sending peer
+  // exponentially by a factor that depends on the confidence
+  // level in the public key association
   } else {
 
-    table.sigReps[peer] = common.Clamp(table.sigReps[peer] *
+    table.sigReps[peer] = common.ClampFloat32(table.sigReps[peer] *
       sigRepDecreaseFactor(confidence), MIN_REP, MAX_REP)
 
   }
+
+  table.mutex.Unlock()
 
 }
 

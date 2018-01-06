@@ -77,12 +77,13 @@ type DataReply struct {
 }
 
 type GossipPacket struct {
-	Rumor       *RumorMessage
-	Status      *StatusPacket
-	Private     *PrivateMessage
-	DataRequest *DataRequest
-	DataReply   *DataReply
-	RepUpdate   *rep.RepUpdate
+	Rumor        *RumorMessage
+	Status       *StatusPacket
+	Private      *PrivateMessage
+	DataRequest  *DataRequest
+	DataReply    *DataReply
+	RepUpdateReq *rep.RepUpdateRequest
+	RepUpdate    *rep.RepUpdate
 }
 
 type Packet struct {

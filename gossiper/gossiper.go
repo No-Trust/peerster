@@ -62,7 +62,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		metadataSet:         metadataSet,
 		FileDownloads:       *NewFileDownloads(),
 		key:                 key,
-		reputationTable:     rep.NewReputationTable(&peerSet),
+		reputationTable:     *rep.NewReputationTable(&peerSet),
 		trustedKeys:         trustedKeys,
 		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys),
 	}
@@ -86,8 +86,10 @@ func (g *Gossiper) Start() {
 	go writer(g, g.Parameters.GossipConn, g.gossipOutputQueue, wg)
 	// Anti Entropy Thread
 	go antiEntropy(g, g.Parameters.Etimer, wg)
-	// Route Rumor Sender thread
+	// Route Rumor Sender Thread
 	go routerumor(g, g.Parameters.Rtimer, wg)
+	// Reputation Update Requests Thread
+	go repUpdateRequests(g, g.Parameters.Reptimer, wg)
 
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
@@ -136,6 +138,10 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		// process data reply
 		go g.processDataReply(pkt.DataReply, remoteaddr)
 	}
+  if pkt.RepUpdateReq != nil {
+    // process reputation update request
+    go g.processRepUpdateReq(pkt.RepUpdateReq, &A)
+  }
   if pkt.RepUpdate != nil {
     // process reputation update
     go g.reputationTable.UpdateReputations(pkt.RepUpdate, &A)
