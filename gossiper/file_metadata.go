@@ -7,10 +7,12 @@ import (
 )
 
 type FileMetadata struct {
-	Name     string
-	Size     uint
-	Metafile []byte
-	Metahash []byte
+	Name      string
+	Size      uint
+	Metafile  []byte
+	Metahash  []byte
+	Origin		string
+	SigOrigin *[]byte
 }
 
 func GetNumberOfChunks(metafile []byte, hashlen uint) uint {

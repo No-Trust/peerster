@@ -74,6 +74,10 @@ type DataReply struct {
 	FileName    string
 	HashValue   []byte
 	Data        []byte
+	// Added for "authenticity"
+	SigOrigin       *[]byte
+	SigUploader     *[]byte
+	SigMetaUploader *[]byte
 }
 
 type GossipPacket struct {

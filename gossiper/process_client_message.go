@@ -2,7 +2,10 @@
 package main
 
 import (
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto"
+	"crypto/rand"
 	"github.com/No-Trust/peerster/common"
 	"io/ioutil"
 	"net"
@@ -176,11 +179,16 @@ func processNewFile(newfile *common.NewFile, g *Gossiper) {
 	h.Write(metafile)
 	metahash := h.Sum(nil)
 
+	// signing the metahash
+	SigOrigin, err := rsa.SignPSS(rand.Reader, &(g.key), crypto.SHA256, metahash, nil)
+	common.CheckError(err)
+
 	meta := FileMetadata{
-		Name:     filename,
-		Size:     filesize,
-		Metafile: metafile,
-		Metahash: metahash,
+		Name:      filename,
+		Size:      filesize,
+		Metafile:  metafile,
+		Metahash:  metahash,
+		SigOrigin: &SigOrigin,
 	}
 
 	g.metadataSet.Add(meta)

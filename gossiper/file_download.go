@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"crypto"
+	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
 	"github.com/No-Trust/peerster/common"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -19,6 +22,7 @@ type FileDownload struct {
 	Chunks       [][]byte
 	NextChunk    uint
 	LastChunk    uint
+	SigUploader  *[]byte
 }
 
 /***** File Downloads *****/
@@ -88,8 +92,19 @@ func (fds *FileDownloads) Remove(f *FileDownload) {
 // Perform the download from given information in the FileRequest
 func startDownload(g *Gossiper, filereq *common.FileRequest) {
 
+	verifiedUploader := true
+	knownOrigin := true
+	valid := true // true if the received file mathches signature from origin
+
+	uploaderKey, present := g.keyRing.GetKey(filereq.Destination)
+	if !present {
+		verifiedUploader = false
+	}
+
 	// assuming we have the metahash
 	metadata := g.metadataSet.Get(filereq.MetaHash)
+
+	var sigUploaderP *[]byte = nil
 
 	if metadata == nil {
 		// download metafile
@@ -194,6 +209,41 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 					metadata.Metafile = make([]byte, len(metafile))
 					copy(metadata.Metafile, metafile)
 
+					if verifiedUploader && metareply.SigOrigin != nil && metareply.SigUploader != nil && metareply.SigMetaUploader != nil {
+
+						sigoriginI := *metareply.SigOrigin
+						SigOrigin := make([]byte, len(sigoriginI))
+						copy(SigOrigin, sigoriginI)
+						metadata.SigOrigin = &SigOrigin
+
+						siguploader := *metareply.SigUploader
+						SigUploader := make([]byte, len(siguploader))
+						copy(SigUploader, siguploader)
+						sigUploaderP = &SigUploader
+
+						// check that SigMetaUploader corresponds
+						metac := append(metadata.Metafile, append(*metareply.SigOrigin, *metareply.SigUploader...)...)
+						newhash := sha256.New()
+						newhash.Write(metac)
+						metachashed := newhash.Sum(nil)
+						// verify against SigMetaUploader
+
+						err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metachashed, *metareply.SigMetaUploader, nil)
+						if err != nil {
+							log.Println("WRONG SigMetaUploader")
+							verifiedUploader = false
+						} else {
+							log.Println("GOOD SigMetaUploader")
+						}
+					} else {
+						// no signatures, cannot be verified
+						verifiedUploader = false
+					}
+
+					if metareply.SigOrigin == nil {
+						valid = false
+					}
+
 					g.metadataSet.Add(*metadata)
 
 					close(metaReplyChannel)
@@ -216,6 +266,7 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 		Chunks:       make([][]byte, 0),
 		NextChunk:    0,
 		LastChunk:    chunkNumber,
+		SigUploader:  sigUploaderP,
 	}
 
 	// add current download info to the database of current downloads
@@ -351,6 +402,49 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 
 	// reconstruct file
 	fileBytes := reassembleChunks(&(download.Chunks))
+
+	// check signatures against metahash
+	sigOrigin := download.FileMetadata.SigOrigin
+	sigUploader := download.SigUploader
+	metahash := download.FileMetadata.Metahash
+
+	// check sigUploader
+	if verifiedUploader {
+		err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metahash, *sigUploader, nil)
+		if err != nil {
+			log.Println("WRONG SigUploader")
+			verifiedUploader = false
+		} else {
+			log.Println("GOOD SigUploader")
+		}
+	}
+	// check sigOrigin
+	if sigOrigin != nil && valid && filereq.Origin != nil {
+		originKey, present := g.keyRing.GetKey(*filereq.Origin)
+
+		if !present {
+			// do not have the public key : impossible to verify
+			valid = false
+			knownOrigin = false
+		} else {
+			err := rsa.VerifyPSS(&originKey, crypto.SHA256, metahash, *sigOrigin, nil)
+			if err != nil {
+				log.Println("WRONG SigOrigin")
+				valid = false
+			}
+		}
+	} else {
+		valid = false
+	}
+
+	if verifiedUploader && knownOrigin && !valid && filereq.Origin != nil {
+		// the file has been sent by Uploader, and its signature by origin is invalid
+		// action : decrease reputation of Uploader
+		// TODO Raja
+	} else if verifiedUploader && knownOrigin && valid {
+		// the file has been sent by Uploader, and its signature by origin is valid
+		// action : increase reputation of Uploader
+	}
 
 	// store file in disk
 	path, err := filepath.Abs("")

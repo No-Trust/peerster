@@ -2,6 +2,11 @@
 package main
 
 import (
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"github.com/No-Trust/peerster/common"
 	"io/ioutil"
 	"net"
 )
@@ -34,22 +39,40 @@ func (g *Gossiper) processDataRequest(req *DataRequest, remoteaddr *net.UDPAddr)
 
 		if fm != nil {
 			// this is a metafile request
+
+			// signing the metahash
+			SigUploader, err := rsa.SignPSS(rand.Reader, &(g.key), crypto.SHA256, fm.Metahash, nil)
+			common.CheckError(err)
+
+			var SigMetaUploaderP *[]byte = nil
+			if fm.SigOrigin != nil {
+				metac := append(fm.Metafile, append(*fm.SigOrigin, SigUploader...)...)
+				newhash := sha256.New()
+				newhash.Write(metac)
+				metachashed := newhash.Sum(nil)
+				SigMetaUploader, err := rsa.SignPSS(rand.Reader, &(g.key), crypto.SHA256, metachashed, nil)
+				common.CheckError(err)
+				SigMetaUploaderP = &SigMetaUploader
+			}
+
 			// send the metafile
 
 			g.gossipOutputQueue <- &Packet{
 				GossipPacket: GossipPacket{
 					DataReply: &DataReply{
-						Origin:      g.Parameters.Identifier,
-						Destination: req.Origin,
-						HopLimit:    g.Parameters.Hoplimit,
-						FileName:    req.FileName,
-						HashValue:   hash,
-						Data:        fm.Metafile,
+						Origin:          g.Parameters.Identifier,
+						Destination:     req.Origin,
+						HopLimit:        g.Parameters.Hoplimit,
+						FileName:        req.FileName,
+						HashValue:       hash,
+						Data:            fm.Metafile,
+						SigOrigin:       fm.SigOrigin,
+						SigUploader:     &SigUploader,
+						SigMetaUploader: SigMetaUploaderP,
 					},
 				},
 				Destination: *nextHopAddress,
 			}
-
 			return
 		}
 
@@ -64,7 +87,7 @@ func (g *Gossiper) processDataRequest(req *DataRequest, remoteaddr *net.UDPAddr)
 			// got it
 			// send it
 
-      g.gossipOutputQueue <- &Packet{
+			g.gossipOutputQueue <- &Packet{
 				GossipPacket: GossipPacket{
 					DataReply: &DataReply{
 						Origin:      g.Parameters.Identifier,
@@ -78,7 +101,7 @@ func (g *Gossiper) processDataRequest(req *DataRequest, remoteaddr *net.UDPAddr)
 				Destination: *nextHopAddress,
 			}
 
-      return
+			return
 		}
 
 		// Check in downloading files
@@ -87,7 +110,7 @@ func (g *Gossiper) processDataRequest(req *DataRequest, remoteaddr *net.UDPAddr)
 			// got it
 			// Send it
 
-      g.gossipOutputQueue <- &Packet{
+			g.gossipOutputQueue <- &Packet{
 				GossipPacket: GossipPacket{
 					DataReply: &DataReply{
 						Origin:      g.Parameters.Identifier,
@@ -100,14 +123,14 @@ func (g *Gossiper) processDataRequest(req *DataRequest, remoteaddr *net.UDPAddr)
 				},
 				Destination: *nextHopAddress,
 			}
-      return
+			return
 		}
 
 		return
 	}
 
-  // this is not the destination
-  // forward the packet
+	// this is not the destination
+	// forward the packet
 
 	if g.Parameters.NoForward {
 		return
@@ -132,5 +155,5 @@ func (g *Gossiper) processDataRequest(req *DataRequest, remoteaddr *net.UDPAddr)
 			Destination: nextHopAddress,
 		}
 	}
-  return
+	return
 }
