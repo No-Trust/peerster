@@ -212,7 +212,7 @@ func (ring *KeyRing) worker() {
 		for _ = range ticker.C {
 			ring.updatePending()
 			ring.updateConfidence()
-			ring.Save("ring")
+			//ring.Save("ring")
 		}
 	}()
 }
