@@ -13,6 +13,17 @@ type KeyTable struct {
 	mutex *sync.Mutex
 }
 
+// getPeerList returns a slice of string with the names of peers it has a public key
+func (table KeyTable) getPeerList() []string {
+	table.mutex.Lock()
+	defer table.mutex.Unlock()
+	peers := make([]string, 0)
+	for key, _ := range table.db {
+		peers = append(peers, key)
+	}
+	return peers
+}
+
 // Add a record to the key table, overwrites it if it already exists
 func (table *KeyTable) add(rec TrustedKeyRecord) {
 	table.mutex.Lock()

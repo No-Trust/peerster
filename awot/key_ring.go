@@ -70,6 +70,11 @@ func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
 	return ring.keyTable.get(name)
 }
 
+// GetPeerList returns the list of peer name the keyring has a public key for
+func (ring KeyRing) GetPeerList() []string {
+	return ring.keyTable.getPeerList()
+}
+
 // Add an exchange message that could not be verified (lack of signer's key)
 func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
 	ring.mutex.Lock()
