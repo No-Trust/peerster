@@ -74,7 +74,7 @@ startGossip F 5005 10005 ../../keysF/
 startGossip G 5006 10006 ../../keysG/
 
 sleep 30
-killall gossiper
+pkill -f gossiper
 
 cp A/A.pub keys/
 cp B/B.pub keys/
