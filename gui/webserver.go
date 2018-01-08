@@ -32,6 +32,7 @@ type WebMessage struct {
 	Filename    string
 	Hexhash     string
 	Node        string
+	Origin      string
 }
 
 func parse(req *http.Request) *WebMessage {
@@ -97,8 +98,8 @@ func main() {
 	r.HandleFunc("/private-message", getPrivateMessagesHandler).Methods("GET") // request new private messages
 	r.HandleFunc("/node", getNodesHandler).Methods("GET")                      // request update on nodes
 	r.HandleFunc("/reachable-node", getReachableNodesHandler).Methods("GET")   // request update on reachable nodes
-	r.HandleFunc("/keyring", getRingHandler).Methods("GET")                       // request ring
-	r.HandleFunc("/ring.json", getRingJSONHandler).Methods("GET")                       // request ring json
+	r.HandleFunc("/keyring", getRingHandler).Methods("GET")                    // request ring
+	r.HandleFunc("/ring.json", getRingJSONHandler).Methods("GET")              // request ring json
 
 	http.Handle("/", r)
 
@@ -246,8 +247,9 @@ func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	hexhash := webm.Hexhash
 	destination := webm.Destination
 	filename := webm.Filename
+	origin := webm.Origin
 
-	fmt.Println("*** FILE REQUEST :", filename, hexhash)
+	fmt.Println("*** FILE REQUEST :", filename, hexhash, origin)
 
 	// hex -> []byte
 	metahash, err := hex.DecodeString(hexhash)
@@ -261,6 +263,7 @@ func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
 			MetaHash:    metahash,
 			Destination: destination,
 			FileName:    filename,
+			Origin:      &origin,
 		},
 	}
 }
