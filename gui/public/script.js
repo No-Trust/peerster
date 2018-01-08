@@ -27,12 +27,8 @@ const DOWNLOAD_DIALOG_CONTAINER      = document.getElementById('download-dialog-
 const DOWNLOAD_DIALOG_FILENAME_INPUT = document.getElementById('download-dialog-filename-input');
 const DOWNLOAD_DIALOG_HEXHASH_INPUT  = document.getElementById('download-dialog-hexhash-input');
 const DOWNLOAD_DIALOG_DEST_INPUT     = document.getElementById('download-dialog-dest-input');
+const DOWNLOAD_DIALOG_ORIGIN_INPUT   = document.getElementById('download-dialog-origin-input');
 const DOWNLOAD_DIALOG_BUTTON         = document.getElementById('download-dialog-button');
-
-const LEFT_PANE_INPUT_PLACEHOLDERS = Object.freeze({
-    ENTER_NAME : 'Enter a name',
-    ENTER_PEER : 'Enter a peer'
-});
 
 const SEND_MODES = Object.freeze({
     TEXT  : 0,
@@ -425,15 +421,17 @@ function postPeer() {
 
     let peer = LEFT_PANE_INPUT.value;
 
-    LEFT_PANE_INPUT.value = '';
-
     if (peer !== '') {
+
         fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/node`, {
             method : 'POST',
             body   : JSON.stringify({
                 "node" : peer
             })
         }).catch(console.error);
+
+        LEFT_PANE_INPUT.value = '';
+
     }
 
 }
@@ -443,16 +441,27 @@ function postDownload() {
     let filename    = DOWNLOAD_DIALOG_FILENAME_INPUT.value;
     let hexhash     = DOWNLOAD_DIALOG_HEXHASH_INPUT.value;
     let destination = DOWNLOAD_DIALOG_DEST_INPUT.value;
+    let origin      = DOWNLOAD_DIALOG_ORIGIN_INPUT.value;
 
-    if ((filename !== '') && (hexhash !== '') && (destination !== '')) {
+    if ((filename !== '') && (hexhash !== '') && (destination !== '') && (origin !== '')) {
+
         fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/download`, {
             method : 'POST',
             body   : JSON.stringify({
                 "filename"    : filename,
                 "hexhash"     : hexhash,
-                "destination" : destination
+                "destination" : destination,
+                "origin"      : origin
             })
         });
+
+        DOWNLOAD_DIALOG_FILENAME_INPUT.value = '';
+        DOWNLOAD_DIALOG_HEXHASH_INPUT.value  = '';
+        DOWNLOAD_DIALOG_DEST_INPUT.value     = '';
+        DOWNLOAD_DIALOG_ORIGIN_INPUT.value   = '';
+
+        hideDownloadDialog();
+
     }
 
 }
@@ -462,19 +471,34 @@ function postDownload() {
 */
 
 window.addEventListener('keypress', event => {
+
     if (event.keyCode === 13) {
+
         switch (document.activeElement) {
+
             case LEFT_PANE_INPUT:
-                chatsTabIsSelected() ? postName() : postPeer();
+                postPeer();
                 break;
+
             case MESSAGE_INPUT:
                 postMessage();
                 break;
+
+            case DOWNLOAD_DIALOG_FILENAME_INPUT:
+            case DOWNLOAD_DIALOG_HEXHASH_INPUT:
+            case DOWNLOAD_DIALOG_DEST_INPUT:
+            case DOWNLOAD_DIALOG_ORIGIN_INPUT:
+                postDownload();
+                break;
+
         }
+
     }
+
 });
 
 CHATS_TAB.addEventListener('click', event => {
+
     delete PEERS_TAB.dataset.selected;
     CHATS_TAB.dataset.selected = '';
 
@@ -486,13 +510,10 @@ CHATS_TAB.addEventListener('click', event => {
 
     activateChat(activeChat);
 
-    LEFT_PANE_INPUT.placeholder = LEFT_PANE_INPUT_PLACEHOLDERS.ENTER_NAME;
-
-    LEFT_PANE_BUTTON.classList.remove('mdi-account-plus');
-    LEFT_PANE_BUTTON.classList.add('mdi-account-edit');
 });
 
 PEERS_TAB.addEventListener('click', event => {
+
     delete CHATS_TAB.dataset.selected;
     PEERS_TAB.dataset.selected = '';
 
@@ -502,14 +523,9 @@ PEERS_TAB.addEventListener('click', event => {
         addPeer(peer);
     });
 
-    LEFT_PANE_INPUT.placeholder = LEFT_PANE_INPUT_PLACEHOLDERS.ENTER_PEER;
-
-    LEFT_PANE_BUTTON.classList.remove('mdi-account-edit');
-    LEFT_PANE_BUTTON.classList.add('mdi-account-plus');
 });
 
-LEFT_PANE_BUTTON.addEventListener('click', event =>
-    chatsTabIsSelected() ? postName() : postPeer());
+LEFT_PANE_BUTTON.addEventListener('click', postPeer);
 
 MESSAGE_ATTACH_BUTTON.addEventListener('click', event => FILE_INPUT.click());
 
