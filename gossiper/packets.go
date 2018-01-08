@@ -50,11 +50,15 @@ type StatusPacket struct {
 /***** Private Message *****/
 
 type PrivateMessage struct {
-	Origin   string
-	ID       uint32
-	Text     string
-	Dest     string
-	HopLimit uint32
+	Origin          string
+	ID              uint32
+	Text            string
+	Dest            string
+	HopLimit        uint32
+  // Added for Signature-based
+  // Reputation Updates
+  RepSigUpdateReq bool
+  RepUpdate       *rep.RepUpdate
 }
 
 /***** Data Request & Reply *****/
@@ -81,13 +85,13 @@ type DataReply struct {
 }
 
 type GossipPacket struct {
-	Rumor        *RumorMessage
-	Status       *StatusPacket
-	Private      *PrivateMessage
-	DataRequest  *DataRequest
-	DataReply    *DataReply
-	RepUpdateReq *rep.RepUpdateRequest
-	RepUpdate    *rep.RepUpdate
+	Rumor               *RumorMessage
+	Status              *StatusPacket
+	Private             *PrivateMessage
+	DataRequest         *DataRequest
+	DataReply           *DataReply
+	RepContribUpdateReq bool
+	RepUpdate           *rep.RepUpdate
 }
 
 type Packet struct {

@@ -24,6 +24,5 @@ const DEFAULT_REP_REQ_TIMER   uint    = 60
 const REP_REQ_PEER_COUNT      uint    =  3
 
 const UPDATE_WEIGHT_LIMIT     float32 = 0.15
-// const ONE_MINUS_UPDATE_WEIGHT float32 = 1 - UPDATE_WEIGHT
 
 const UPDATER_DECREASE_LIMIT  float32 = 0.25

@@ -1,21 +1,13 @@
 package rep
 
 /*
-    Imports
-*/
-
-import (
-  "github.com/No-Trust/peerster/common"
-)
-
-/*
     Functions
 */
 
 /**
  * Returns the contribution-based reputation of the given peer.
  */
-func (table *ReputationTable) GetContribRep(peer *common.Peer) (/*rep*/ float32, /*ok*/ bool) {
+func (table *ReputationTable) GetContribRep(peer string) (/*rep*/ float32, /*ok*/ bool) {
 
   table.mutex.Lock()
 
@@ -34,7 +26,7 @@ func (table *ReputationTable) GetContribRep(peer *common.Peer) (/*rep*/ float32,
  * reputation table. The operation is defined as a callback
  * function that takes a peer and a reputation as parameters.
  */
-func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ *common.Peer, /*rep*/ float32)) {
+func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ string, /*rep*/ float32)) {
 
   // Loop through the entries
   for peer, rep := range table.contribReps {
@@ -48,7 +40,7 @@ func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ *common.P
  * Updates the contribution-based reputation of a
  * given peer to which data was sent.
  */
-func (table *ReputationTable) UpdateContribRepDataSent(peer *common.Peer) {
+func (table *ReputationTable) UpdateContribRepDataSent(peer string) {
   table.updateContribRep(peer, false)
 }
 
@@ -56,7 +48,7 @@ func (table *ReputationTable) UpdateContribRepDataSent(peer *common.Peer) {
  * Updates the contribution-based reputation of a
  * given peer from which data was received.
  */
-func (table *ReputationTable) UpdateContribRepDataReceived(peer *common.Peer) {
+func (table *ReputationTable) UpdateContribRepDataReceived(peer string) {
   table.updateContribRep(peer, true)
 }
 
@@ -67,7 +59,7 @@ func (table *ReputationTable) UpdateContribRepDataReceived(peer *common.Peer) {
  * moving average with each "new value" being either the maximum
  * or minimum possible reputation value.
  */
-func (table *ReputationTable) updateContribRep(peer *common.Peer, dataReceived bool) {
+func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
 
   // The new value to use in the moving average formula
   var newValue float32
@@ -81,6 +73,10 @@ func (table *ReputationTable) updateContribRep(peer *common.Peer, dataReceived b
   }
 
   table.mutex.Lock()
+
+  if _, ok := table.contribReps[peer] ; !ok {
+    table.contribReps[peer] = INIT_REP
+  }
 
   // Update the peer's reputation
   table.contribReps[peer] = CONTRIB_ALPHA * newValue +

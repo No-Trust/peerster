@@ -6,6 +6,7 @@ package rep
 
 import (
 
+  "strconv"
   "sync"
 
   "github.com/No-Trust/peerster/common"
@@ -34,8 +35,10 @@ func NewReputationTable(peerSet *common.PeerSet) *ReputationTable {
   // Add each peer to the table with initial reputation
   for _, peer := range peers {
 
-    table.sigReps[&peer]     = INIT_REP
-    table.contribReps[&peer] = INIT_REP
+    addr := peer.Address.IP.String() + ":" + strconv.Itoa(peer.Address.Port)
+
+    // table.sigReps[peer.Identifier]     = INIT_REP
+    table.contribReps[addr] = INIT_REP
 
   }
 
@@ -48,11 +51,11 @@ func NewReputationTable(peerSet *common.PeerSet) *ReputationTable {
  * Finds the peer with the smallest reputation in a given
  * peer->rep map and returns a pointer to that peer.
  */
-func findMinRepPeer(reps ReputationMap) *common.Peer {
+func findMinRepPeer(reps ReputationMap) string {
 
   // Minimum reputation and corresponding peer
-  var min      float32     = MAX_REP
-  var minPeer *common.Peer = nil 
+  var min     float32 = MAX_REP
+  var minPeer string  = "" 
 
   // Loop through the entries
   for peer, rep := range reps {
@@ -84,7 +87,7 @@ func highestReps(reps ReputationMap, n uint) ReputationMap {
   // this one is found, all we need to do is remove this peer
   // from the map, add the newly found peer, and update this
   // pointer with the new "smallest highest" reputation peer.
-  var minPeer *common.Peer = nil
+  var minPeer string = ""
 
   // Loop through the entries
   for peer, rep := range reps {

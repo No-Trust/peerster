@@ -4,9 +4,7 @@ package rep
     Imports
 */
 
-import (
-  "github.com/No-Trust/peerster/common"
-)
+import "github.com/No-Trust/peerster/common"
 
 /*
     Functions
@@ -15,7 +13,7 @@ import (
 /**
  * Returns the signature-based reputation of the given peer.
  */
-func (table *ReputationTable) GetSigRep(peer *common.Peer) (/*rep*/ float32, /*ok*/ bool) {
+func (table *ReputationTable) GetSigRep(peer string) (/*rep*/ float32, /*ok*/ bool) {
 
   table.mutex.Lock()
 
@@ -34,7 +32,7 @@ func (table *ReputationTable) GetSigRep(peer *common.Peer) (/*rep*/ float32, /*o
  * reputation table. The operation is defined as a callback
  * function that takes a peer and a reputation as parameters.
  */
-func (table *ReputationTable) ForEachSigRep(callback func(/*peer*/ *common.Peer, /*rep*/ float32)) {
+func (table *ReputationTable) ForEachSigRep(callback func(/*peer*/ string, /*rep*/ float32)) {
 
   // Loop through the entries
   for peer, rep := range table.sigReps {
@@ -44,19 +42,25 @@ func (table *ReputationTable) ForEachSigRep(callback func(/*peer*/ *common.Peer,
 
 }
 
-// TODO: Decide where to check the signature of the
-//       data and what to test in this function
+func (table *ReputationTable) DecreaseSigRep(peer string, confidence float32) {
+  table.updateSigRep(peer, confidence, false)
+}
+
+func (table *ReputationTable) IncreaseSigRep(peer string, confidence float32) {
+  table.updateSigRep(peer, confidence, true)
+}
+
 /**
  * Updates the signature-based reputation of a given
  * peer from which data was received.
  */
-func (table *ReputationTable) UpdateSigRep(peer *common.Peer) {
-
-  // TEMPORARY
-  correctSig := true
-  var confidence float32 = 1
+func (table *ReputationTable) updateSigRep(peer string, confidence float32, correctSig bool) {
 
   table.mutex.Lock()
+
+  if _, ok := table.sigReps[peer] ; !ok {
+    table.sigReps[peer] = INIT_REP
+  }
 
   // If the signature is correct, increase the reputation
   // of the sending peer linearly by a factor that depends

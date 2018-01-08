@@ -4,9 +4,7 @@ package rep
     Imports
 */
 
-import (
-  "github.com/No-Trust/peerster/common"
-)
+import "github.com/No-Trust/peerster/common"
 
 /*
     Functions
@@ -71,7 +69,7 @@ func (table *ReputationTable) GetContribUpdate() *RepUpdate {
  * reputation based on the degree of similarity between
  * their update and this table.
  */
-func (table *ReputationTable) UpdateReputations(update *RepUpdate, sender *common.Peer) {
+func (table *ReputationTable) UpdateReputations(update *RepUpdate, sender string) {
 
   // The peer->rep map to update and the one
   // in the update to use for updating
@@ -184,7 +182,7 @@ func averageHammingDistance(reps1, reps2 ReputationMap) float32 {
  * by a factor that depends on the average Hamming distance
  * between the reputations in their update and this table.
  */
-func (table *ReputationTable) updateUpdaterReputation(update *RepUpdate, updater *common.Peer) {
+func (table *ReputationTable) updateUpdaterReputation(update *RepUpdate, updater string) {
 
   // The peer->rep map and the one in the update
   // to use for when computing the Hamming distance
