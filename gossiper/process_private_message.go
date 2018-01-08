@@ -4,6 +4,10 @@ package main
 import (
 	"github.com/No-Trust/peerster/common"
 	"net"
+	"log"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/rand"
 )
 
 // Handler for inbound Private Message
@@ -14,6 +18,14 @@ func (g *Gossiper) processPrivateMessage(pm *PrivateMessage, remoteaddr *net.UDP
 	if pm.Dest == g.Parameters.Identifier {
 		// this node is the destination
 
+
+		// decipher
+		secret := []byte(pm.Text)
+		plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, &g.key, secret, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 		// printing
 		g.standardOutputQueue <- pm.PrivateMessageString(remoteaddr)
 
@@ -24,7 +36,7 @@ func (g *Gossiper) processPrivateMessage(pm *PrivateMessage, remoteaddr *net.UDP
 					NewPrivateMessage: &common.NewPrivateMessage{
 						Origin: pm.Origin,
 						Dest:   pm.Dest,
-						Text:   pm.Text,
+						Text:   string(plaintext),
 					},
 				},
 				Destination: *g.ClientAddress,
