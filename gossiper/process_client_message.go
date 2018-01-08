@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"log"
 	"path/filepath"
 )
 
@@ -70,10 +71,22 @@ func processNewPrivateMessage(pcm *common.NewPrivateMessage, g *Gossiper) {
 	// new private message
 	g.standardOutputQueue <- pcm.ClientNewPrivateMessageString()
 
+	// encrypt text with receiver's public key
+	rpub, pres := g.keyRing.GetKey(pcm.Dest)
+	if !pres {
+		// no public key to the destination
+		return
+	}
+	secret := []byte(pcm.Text)
+	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, &rpub, secret, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	pm := PrivateMessage{
 		Origin:   g.Parameters.Identifier,
 		ID:       0,
-		Text:     pcm.Text,
+		Text:     string(ciphertext),
 		Dest:     pcm.Dest,
 		HopLimit: g.Parameters.Hoplimit,
 	}
@@ -128,6 +141,18 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 		// Update Request
 		cpy := g.peerSet.ToPeerSlice() // copy of the peerset
 		ids := g.routingTable.GetIds() // ids of peer with known route
+		keys := g.keyRing.GetPeerList() // ids of peers with known public key
+		// nasty intersection TODO
+		rNodes := make([]string, 0)
+		for _, p1 := range ids {
+			for _, p2 := range keys {
+				if p1 == p2 {
+					rNodes = append(rNodes, p2)
+					break;
+				}
+			}
+		}
+
 		graph, err := g.keyRing.JSON()
 		if err != nil {
 			graph = nil
@@ -135,7 +160,7 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 		// sending
 		g.clientOutputQueue <- &common.Packet{
 			ClientPacket: common.ClientPacket{
-				ReachableNodes: &ids,
+				ReachableNodes: &rNodes,
 				PeerSlice:      &cpy,
 				KeyRingJSON:    &graph,
 			},

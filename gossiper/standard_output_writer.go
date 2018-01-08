@@ -82,7 +82,7 @@ func (msg *StatusPacket) AntiEntropyString(peer *net.UDPAddr) *string {
 }
 
 func (pm *PrivateMessage) PrivateMessageString(source *net.UDPAddr) *string {
-	str := fmt.Sprintf("PRIVATE: %s:%d:%s", pm.Origin, pm.HopLimit, pm.Text)
+	str := fmt.Sprintf("PRIVATE: %s:%d:%x", pm.Origin, pm.HopLimit, pm.Text)
 	return &str
 }
 
