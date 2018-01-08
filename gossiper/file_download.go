@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/No-Trust/peerster/common"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -92,9 +91,9 @@ func (fds *FileDownloads) Remove(f *FileDownload) {
 // Perform the download from given information in the FileRequest
 func startDownload(g *Gossiper, filereq *common.FileRequest) {
 
-	verifiedUploader := true
-	knownOrigin := true
-	valid := true // true if the received file mathches signature from origin
+	verifiedUploader := true     // true if the uploader is verified to be the sender
+	knownOrigin := true          // true if the origin is known (this peer has its public key)
+	validOriginSignature := true // true if the received file is verified to be originated from supposed origin
 
 	uploaderKey, present := g.keyRing.GetKey(filereq.Destination)
 	if !present {
@@ -221,27 +220,32 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 						copy(SigUploader, siguploader)
 						sigUploaderP = &SigUploader
 
+						sigmetauploader := *metareply.SigMetaUploader
+						SigMetaUploader := make([]byte, len(sigmetauploader))
+						copy(SigMetaUploader, sigmetauploader)
+
 						// check that SigMetaUploader corresponds
-						metac := append(metadata.Metafile, append(*metareply.SigOrigin, *metareply.SigUploader...)...)
+						metac := append(metadata.Metafile, append(SigOrigin, SigUploader...)...)
 						newhash := sha256.New()
 						newhash.Write(metac)
 						metachashed := newhash.Sum(nil)
-						// verify against SigMetaUploader
 
-						err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metachashed, *metareply.SigMetaUploader, nil)
+						// verify against SigMetaUploader
+						err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metachashed, SigMetaUploader, nil)
 						if err != nil {
-							log.Println("WRONG SigMetaUploader")
+							g.standardOutputQueue <- FileWrongSigMetaUploader(filereq.Destination)
 							verifiedUploader = false
 						} else {
-							log.Println("GOOD SigMetaUploader")
+							g.standardOutputQueue <- FileGoodSigMetaUploader(filereq.Destination)
 						}
 					} else {
-						// no signatures, cannot be verified
+						// no signatures, uploader cannot be verified
 						verifiedUploader = false
 					}
 
 					if metareply.SigOrigin == nil {
-						valid = false
+						// if no origin signature, cannot verify origin
+						validOriginSignature = false
 					}
 
 					g.metadataSet.Add(*metadata)
@@ -412,38 +416,55 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 	if verifiedUploader {
 		err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metahash, *sigUploader, nil)
 		if err != nil {
-			log.Println("WRONG SigUploader")
+			g.standardOutputQueue <- FileWrongSigUploader(filereq.Destination)
 			verifiedUploader = false
 		} else {
-			log.Println("GOOD SigUploader")
+			g.standardOutputQueue <- FileGoodSigUploader(filereq.Destination)
 		}
 	}
 	// check sigOrigin
-	if sigOrigin != nil && valid && filereq.Origin != nil {
+	if sigOrigin != nil && validOriginSignature && filereq.Origin != nil {
 		originKey, present := g.keyRing.GetKey(*filereq.Origin)
 
 		if !present {
 			// do not have the public key : impossible to verify
-			valid = false
+			validOriginSignature = false
 			knownOrigin = false
 		} else {
 			err := rsa.VerifyPSS(&originKey, crypto.SHA256, metahash, *sigOrigin, nil)
 			if err != nil {
-				log.Println("WRONG SigOrigin")
-				valid = false
+				g.standardOutputQueue <- FileWrongSigOrigin(*filereq.Origin)
+				validOriginSignature = false
+			} else {
+				g.standardOutputQueue <- FileGoodSigOrigin(*filereq.Origin)
 			}
 		}
 	} else {
-		valid = false
+		validOriginSignature = false
 	}
 
-	if verifiedUploader && knownOrigin && !valid && filereq.Origin != nil {
+	if verifiedUploader && knownOrigin && !validOriginSignature && filereq.Origin != nil {
 		// the file has been sent by Uploader, and its signature by origin is invalid
 		// action : decrease reputation of Uploader
 		// TODO Raja
-	} else if verifiedUploader && knownOrigin && valid {
+	} else if verifiedUploader && knownOrigin && validOriginSignature {
 		// the file has been sent by Uploader, and its signature by origin is valid
 		// action : increase reputation of Uploader
+		// TODO Raja
+	}
+
+	if validOriginSignature {
+		// the file itself is fine
+		g.standardOutputQueue <- FileGoodOrigin(*filereq.Origin)
+	} else if filereq.Origin == nil {
+		// did not ask for origin check
+		g.standardOutputQueue <- FileWarningUnverifiedOrigin()
+	} else {
+		// the origin of the file cannot be certified
+		g.standardOutputQueue <- FileErrorUnverifiedOrigin(*filereq.Origin)
+		// drop the file
+		g.FileDownloads.Remove(&download)
+		return
 	}
 
 	// store file in disk
@@ -468,5 +489,4 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 
 	// we are done with the download
 	g.FileDownloads.Remove(&download)
-
 }

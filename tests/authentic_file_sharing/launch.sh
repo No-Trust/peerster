@@ -9,6 +9,8 @@ DEBUG="false"
 
 file3=file3.jpg
 hash3=b4a4936e0f3153ea38b787eead84a79f5b17e806a4c09d0546903445607ee91b
+file2=file2.txt
+hash2=97c839ada61f59f61c81b20ff1f4948ee8c3635bf21606ca06a1d19c957d8ec2
 
 startGossip(){
 	local name=$1
@@ -55,5 +57,7 @@ sleep 5
 
 echo -e "${GREEN}G is given file3${NC}"
 ./cli -UIPort=10006 -file=$file3
+echo -e "${GREEN}G is given file2${NC}"
+./cli -UIPort=10006 -file=$file2
 
 sleep 2

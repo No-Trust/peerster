@@ -86,6 +86,8 @@ func (pm *PrivateMessage) PrivateMessageString(source *net.UDPAddr) *string {
 	return &str
 }
 
+///// File Download
+
 func (req *DataRequest) DataRequestString(source *net.UDPAddr) *string {
 	str := fmt.Sprintf("DATA REQUEST: %s:%d:%s:%s", req.Origin, req.HopLimit, req.FileName, string(req.HashValue))
 	return &str
@@ -100,6 +102,59 @@ func FileSubmissionDone(metahash []byte) *string {
 	str := fmt.Sprintf("CLIENT FILE ACCEPTED metahash %s", hex.EncodeToString(metahash))
 	return &str
 }
+
+///// Authentic File Download
+
+func FileWrongSigMetaUploader(uploader string) *string {
+	str := fmt.Sprintf("WRONG Signature of Metadata by uploader %s \n", uploader)
+	str += fmt.Sprintf("WARNING identity of uploader %s cannot be certified", uploader)
+	return &str
+}
+
+func FileGoodSigMetaUploader(uploader string) *string {
+	str := fmt.Sprintf("GOOD Signature of Metadata by uploader %s", uploader)
+	return &str
+}
+
+func FileWrongSigUploader(uploader string) *string {
+	str := fmt.Sprintf("WRONG Signature of File by uploader %s \n", uploader)
+	str += fmt.Sprintf("WARNING identity of uploader %s cannot be certified", uploader)
+	return &str
+}
+
+func FileGoodSigUploader(uploader string) *string {
+	str := fmt.Sprintf("GOOD Signature of File by uploader %s", uploader)
+	return &str
+}
+
+func FileWrongSigOrigin(origin string) *string {
+	str := fmt.Sprintf("WRONG Signature of File by Origin %s \n", origin)
+	str += fmt.Sprintf("WARNING received file from uncertain origin \n")
+	str += fmt.Sprintf("DROPPING file\n")
+	return &str
+}
+
+func FileGoodSigOrigin(origin string) *string {
+	str := fmt.Sprintf("GOOD Signature of File by origin %s", origin)
+	return &str
+}
+
+func FileGoodOrigin(origin string) *string {
+	str := fmt.Sprintf("RECEIVED FILE origin %s certified", origin)
+	return &str
+}
+
+func FileWarningUnverifiedOrigin() *string {
+	str := fmt.Sprintf("WARNING RECEIVED FILE unverified origin")
+	return &str
+}
+
+func FileErrorUnverifiedOrigin(origin string) *string {
+	str := fmt.Sprintf("ERROR RECEIVED FILE unverified origin %s", origin)
+	return &str
+}
+
+///// Key Exchange
 
 func KeyExchangeSendString(owner string, dest net.UDPAddr) *string {
 	str := fmt.Sprintf("KEY EXCHANGE MESSAGE SENT owner %s to %s:%s", owner, dest.IP.String(), strconv.Itoa(dest.Port))
