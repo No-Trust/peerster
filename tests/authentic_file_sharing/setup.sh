@@ -12,6 +12,8 @@ cd ../../gossiper
 go build
 cd ../cli
 go build
+cd ../gui
+go build
 cd ../tests/authentic_file_sharing/
 
 # creating folders for different peers
@@ -28,6 +30,7 @@ cp ../../gossiper/gossiper E/gossiper/gossiper
 cp ../../gossiper/gossiper F/gossiper/gossiper
 cp ../../gossiper/gossiper G/gossiper/gossiper
 cp ../../cli/cli ./
+cp ../../gui/gui ./
 
 startGossip(){
 	local name=$1
@@ -105,3 +108,6 @@ cp keys/G.pub keysF/
 # G is given file3.jpg
 # b4a4936e0f3153ea38b787eead84a79f5b17e806a4c09d0546903445607ee91b
 cp file3.jpg G/gossiper/
+# G is given file2.txt
+# 97c839ada61f59f61c81b20ff1f4948ee8c3635bf21606ca06a1d19c957d8ec2
+cp file2.txt G/gossiper/

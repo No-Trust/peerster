@@ -231,9 +231,7 @@ func (ring *KeyRing) updateConfidence() {
 		terminal := ring.graph.Node(terminalVertex.id)
 		// get shortest paths from source to node
 		minpaths, _ := allShortest.AllBetween(source, terminal)
-		fmt.Println("PATHS for : ", terminalName, "\n", minpaths)
 		minpaths, bestKey := ring.selectBestPaths(minpaths)
-		fmt.Println("BEST for : ", terminalName, "\n", minpaths)
 		probability := ring.probabilityOfMinPaths(minpaths)
 		// update the key table
 		ring.keyTable.updateConfidence(terminalName, probability, bestKey)
