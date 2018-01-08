@@ -18,13 +18,13 @@ startGossip(){
 	local uiport=$3
 	local keysf=$4
 	local peers=""
-	if [ "$1" != "A" ]; then
+	if [ "$1" == "A" ]; then
 		# A -> B,C,D
 		peers="-peers=127.0.0.1:5001,127.0.0.1:5002,127.0.0.1:5003"
-	elif [ "$1" != "B" ]; then
+	elif [ "$1" == "B" ]; then
 		# B -> C,G
 		peers="-peers=127.0.0.1:5002,127.0.0.1:5006"
-	elif [ "$1" != "D" ]; then
+	elif [ "$1" == "D" ]; then
 		# D -> E,F
 		peers="-peers=127.0.0.1:5004,127.0.0.1:5005"
 	fi

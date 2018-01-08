@@ -38,13 +38,13 @@ startGossip(){
 	local uiport=$3
 	local keysf=$4
 	local peers=""
-	if [ "$1" != "A" ]; then
+	if [ "$1" == "A" ]; then
 		# A -> B,C,D
 		peers="-peers=127.0.0.1:5001,127.0.0.1:5002,127.0.0.1:5003"
-	elif [ "$1" != "B" ]; then
+	elif [ "$1" == "B" ]; then
 		# B -> C,G
 		peers="-peers=127.0.0.1:5002,127.0.0.1:5006"
-	elif [ "$1" != "D" ]; then
+	elif [ "$1" == "D" ]; then
 		# D -> E,F
 		peers="-peers=127.0.0.1:5004,127.0.0.1:5005"
 	fi
@@ -73,7 +73,7 @@ startGossip E 5004 10004 ../../keysE/
 startGossip F 5005 10005 ../../keysF/
 startGossip G 5006 10006 ../../keysG/
 
-sleep 30
+sleep 40
 killall gossiper
 
 cp A/A.pub keys/
@@ -99,11 +99,15 @@ cp keys/F.pub keysC/
 # D <- keys G
 cp keys/G.pub keysD/
 
-# E <- keys G
+# E <- keys G, A
 cp keys/G.pub keysE/
+cp keys/A.pub keysE/
 
 # F <- keys G
 cp keys/G.pub keysF/
+
+# G <- keys E
+cp keys/E.pub keysG/
 
 # G is given file3.jpg
 # b4a4936e0f3153ea38b787eead84a79f5b17e806a4c09d0546903445607ee91b
