@@ -63,6 +63,19 @@ func repUpdateRequests(g *Gossiper, reptimer uint, wg sync.WaitGroup) {
 
 }
 
+func repLogs(g *Gossiper, wg sync.WaitGroup) {
+
+  defer wg.Done()
+
+	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+  for _ = range ticker.C {
+    g.reputationTable.Log()
+  }
+
+}
+
 func (g *Gossiper) processRepUpdateReq(request *rep.RepUpdateRequest, sender *common.Peer) {
 
   var repUpdate *rep.RepUpdate

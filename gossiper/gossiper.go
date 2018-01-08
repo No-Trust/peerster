@@ -92,6 +92,8 @@ func (g *Gossiper) Start() {
 	go routerumor(g, g.Parameters.Rtimer, wg)
 	// Reputation Update Requests Thread
 	go repUpdateRequests(g, g.Parameters.Reptimer, wg)
+  // Reputation Logs Thread
+  go repLogs(g, wg)
 
 	fmt.Println("INITIALIZATION DONE")
 
