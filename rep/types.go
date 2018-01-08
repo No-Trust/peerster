@@ -17,13 +17,19 @@ import (
 */
 
 /**
+ * A simple map associating reputations in the form of
+ * 32-bit floating point numbers to pointers to peers.
+ */
+type ReputationMap map[*common.Peer]float32
+
+/**
  * A data structure assotiating signature-based and
- * contribution-based reputations to pointers to peers,
- * in the form of 32-bit floating point numbers.
+ * contribution-based reputations to peers using
+ * ReputationMap fields.
  */
 type ReputationTable struct {
-	sigReps     map[*common.Peer]float32
-	contribReps map[*common.Peer]float32
+	sigReps     ReputationMap
+	contribReps ReputationMap
 	mutex       *sync.Mutex
 }
 
@@ -41,6 +47,6 @@ type RepUpdateRequest struct {
  * based or contribution-based reputations.
  */
 type RepUpdate struct {
-  SigReps     map[*common.Peer]float32
-  ContribReps map[*common.Peer]float32
+  SigReps     ReputationMap
+  ContribReps ReputationMap
 }
