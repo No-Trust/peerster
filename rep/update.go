@@ -20,7 +20,7 @@ func (table *ReputationTable) GetSigUpdate() *RepUpdate {
 
   // Create a new reputation update
   repUpdate := RepUpdate {
-		SigReps : make(map[*common.Peer]float32),
+		SigReps : make(ReputationMap),
 	}
 
   table.mutex.Lock()
@@ -46,7 +46,7 @@ func (table *ReputationTable) GetContribUpdate() *RepUpdate {
 
   // Create a new reputation update
   repUpdate := RepUpdate {
-		ContribReps : make(map[*common.Peer]float32),
+		ContribReps : make(ReputationMap),
 	}
 
   table.mutex.Lock()
@@ -75,8 +75,8 @@ func (table *ReputationTable) UpdateReputations(update *RepUpdate, sender *commo
 
   // The peer->rep map to update and the one
   // in the update to use for updating
-  var refReps    map[*common.Peer]float32
-  var senderReps map[*common.Peer]float32
+  var refReps    ReputationMap
+  var senderReps ReputationMap
 
   // If the signature-based map in the update is
   // non-nil, then it is a signature-based update
@@ -146,7 +146,7 @@ func (table *ReputationTable) UpdateReputations(update *RepUpdate, sender *commo
  * Computes a Hamming distance between two peer->rep maps
  * and returns the average distance across the dimensions.
  */
-func averageHammingDistance(reps1, reps2 map[*common.Peer]float32) float32 {
+func averageHammingDistance(reps1, reps2 ReputationMap) float32 {
 
   // The total sum and count of differences
   var sum   float32 = 0
@@ -188,8 +188,8 @@ func (table *ReputationTable) updateUpdaterReputation(update *RepUpdate, updater
 
   // The peer->rep map and the one in the update
   // to use for when computing the Hamming distance
-  var refReps    map[*common.Peer]float32
-  var updateReps map[*common.Peer]float32
+  var refReps    ReputationMap
+  var updateReps ReputationMap
 
   // If the signature-based map in the update is
   // non-nil, then it is a signature-based update

@@ -23,8 +23,8 @@ func NewReputationTable(peerSet *common.PeerSet) *ReputationTable {
 
   // Create a new empty reputation table
   table := ReputationTable {
-    sigReps     : make(map[*common.Peer]float32),
-    contribReps : make(map[*common.Peer]float32),
+    sigReps     : make(ReputationMap),
+    contribReps : make(ReputationMap),
     mutex       : &sync.Mutex{},
   }
 
@@ -48,7 +48,7 @@ func NewReputationTable(peerSet *common.PeerSet) *ReputationTable {
  * Finds the peer with the smallest reputation in a given
  * peer->rep map and returns a pointer to that peer.
  */
-func findMinRepPeer(reps map[*common.Peer]float32) *common.Peer {
+func findMinRepPeer(reps ReputationMap) *common.Peer {
 
   // Minimum reputation and corresponding peer
   var min      float32     = MAX_REP
@@ -73,10 +73,10 @@ func findMinRepPeer(reps map[*common.Peer]float32) *common.Peer {
  * corresponding peers, in the given peer->rep map, and
  * for a given n.
  */
-func highestReps(reps map[*common.Peer]float32, n uint) map[*common.Peer]float32 {
+func highestReps(reps ReputationMap, n uint) ReputationMap {
 
   // Make a new peer->rep map to hold the highest reputations
-  highestReps := make(map[*common.Peer]float32)
+  highestReps := make(ReputationMap)
 
   // A pointer to the peer with the smallest reputation among
   // the highest reputation peers at any given time.
