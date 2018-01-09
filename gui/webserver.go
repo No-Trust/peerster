@@ -27,6 +27,7 @@ var privateMessages []common.NewPrivateMessage
 var ids []string
 var reputations common.RepUpdate
 var repMutex = &sync.Mutex {}
+var KeyRingJSON []byte
 
 type WebMessage struct {
 	Message     string
@@ -158,8 +159,10 @@ func handleServerMessage(buf []byte, remoteaddr *net.UDPAddr) {
 		// send notification to client
 	}
 	if pkt.KeyRingJSON != nil {
+		// save json
+		KeyRingJSON = *pkt.KeyRingJSON
 		// write json
-		writeKeyRing(*pkt.KeyRingJSON)
+		//writeKeyRing(*pkt.KeyRingJSON)
 	}
 	if pkt.Reputations != nil {
     // Update reputations
@@ -206,14 +209,8 @@ func getReachableNodesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRingJSONHandler(w http.ResponseWriter, r *http.Request) {
-	bytes, err := ioutil.ReadFile("public/ring.json")
 	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.Write(nil)
-	} else {
-		w.Write(bytes)
-	}
-	// http.ServeFile(w, r, "public/ring.json")
+	w.Write(KeyRingJSON)
 }
 
 func getReputationsHandler(w http.ResponseWriter, r *http.Request) {
