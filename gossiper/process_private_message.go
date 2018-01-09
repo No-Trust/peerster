@@ -29,9 +29,12 @@ func (g *Gossiper) processPrivateMessage(pm *PrivateMessage, remoteaddr *net.UDP
 		// printing
 		g.standardOutputQueue <- pm.PrivateMessageString(remoteaddr)
 
-    // If it is a request for a sig-based reputation,
-    // create an update and send it as a reply
+    // If it is a request for a sig-based reputation
+    // update, create one and send it as a reply
     if pm.RepSigUpdateReq {
+
+      log := "SENDING SIG-REP UPDATE TO " + pm.Origin
+      g.standardOutputQueue <- &log
 
       nextHop := g.routingTable.Get(pm.Origin)
 
@@ -53,7 +56,13 @@ func (g *Gossiper) processPrivateMessage(pm *PrivateMessage, remoteaddr *net.UDP
     // forward it to reputation system instead of client
     } else if pm.RepUpdate != nil {
 
+      log := "RECEIVED SIG-REP UPDATE FROM " + pm.Origin + "\nPRINTING OLD REPS AND NEW REPS"
+      g.standardOutputQueue <- &log
+      g.reputationTable.Log()
+
       g.reputationTable.UpdateReputations(pm.RepUpdate, pm.Origin)
+
+      g.reputationTable.Log()
 
       return
 
