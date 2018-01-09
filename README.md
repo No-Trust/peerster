@@ -5,6 +5,11 @@ NAT traversal, File search and Name change have been deactivated for our project
 
 ## Usage
 
+firstly,
+> go build
+
+for gossiper/ gui/ 
+
 ### Gossiper
 
 in /peerster/gossiper, example of (local) use :
@@ -40,9 +45,6 @@ Will kill the gossiper processes and delete the created folders and files in set
 
 
 ##### Gui
-
-Please launch one gui at a time to view its keyring.
-
 in /peerster/gui :
 > ./gui -UIPort=10000 -port=8080
 
