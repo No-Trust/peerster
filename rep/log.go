@@ -7,7 +7,6 @@ package rep
 import (
   "fmt"
   "os"
-  "strconv"
   "text/tabwriter"
 )
 
@@ -33,40 +32,34 @@ func init() {
 
 func (table *ReputationTable) Log() {
 
-  fmt.Println("********* Reputations *********")
-  fmt.Fprintln(writer, "Peer \t Sig-Rep \t Contrib-Rep")
+  fmt.Println("\n************ Reputations ************\n")
 
   table.mutex.Lock()
 
+  fmt.Println("Signature-based Reputations:")
+  fmt.Fprintln(writer, "Peer \t Sig-Rep")
+
   for peer, rep := range table.sigReps {
 
-    contribRep, ok := table.contribReps[peer]
-
-    var contribRepLog string
-    if ok {
-      contribRepLog = strconv.FormatFloat(float64(contribRep), 'f', -1, 32)
-    } else {
-      contribRepLog = "N/A"
-    }
-
-    fmt.Fprintln(writer, peer.Identifier, "\t", rep, "\t", contribRepLog)
+    fmt.Fprintln(writer, peer, "\t", rep)
 
   }
-
-  for peer, rep := range table.contribReps {
-
-    if _, ok := table.sigReps[peer] ; !ok {
-
-      fmt.Fprintln(writer, peer.Identifier, "\tN/A\t", rep)
-
-    }
-
-  }
-
-  table.mutex.Unlock()
 
   writer.Flush()
 
-  fmt.Println("*******************************")
+  fmt.Println("\nContribution-based Reputations:")
+  fmt.Fprintln(writer, "Peer \t Contrib-Rep")
+
+  for peer, rep := range table.contribReps {
+
+    fmt.Fprintln(writer, peer, "\t", rep)
+
+  }
+
+  writer.Flush()
+
+  table.mutex.Unlock()
+
+  fmt.Println("\n*************************************\n")
 
 }

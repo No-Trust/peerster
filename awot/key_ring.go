@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/No-Trust/peerster/rep"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
@@ -84,7 +85,7 @@ func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
 
 // Update the key ring with the given key and origin of the signature
 // Assumes that the signature is correct
-func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
+func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float32) {
 	// do not update if the signer is unknown
 	if !ring.contains(sigOrigin) {
 		return
@@ -106,7 +107,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 	}
 
 	// recompute its probability
-	probability := ring.phi(rec.Owner)
+	probability := ring.phi(rec.Owner, reputationOwner)
 
 	// update probability
 	ring.addNode(rec.Owner, probability)
@@ -124,7 +125,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string) {
 // Create a new key-ring with given fully trusted origin-public key pairs
 // The key ring will update the keytable when needed
 // Creating a Key Ring will also spawn a new goroutine for updating the key ring regularly
-func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord) KeyRing {
+func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord, reptable *rep.ReputationTable) KeyRing {
 
 	keyTable := NewKeyTable(owner, key)
 	nextNode := int64(0)
@@ -201,7 +202,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		mutex:        &sync.Mutex{},
 	}
 
-	go ring.worker()
+	go ring.worker(reptable)
 
 	// return
 	return ring
@@ -209,17 +210,33 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 
 ////////// Key Ring Implementation
 
-func (ring *KeyRing) worker() {
+func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
 	// updating the ring with yet unverified pending messages
 	go func() {
 		ticker := time.NewTicker(time.Second * time.Duration(5)) // every 5 sec
 		defer ticker.Stop()
 		for _ = range ticker.C {
-			ring.updatePending()
+			//ring.updateTrust(*reptable)
+			ring.updatePending(*reptable)
 			ring.updateConfidence()
 			//ring.Save("ring")
 		}
 	}()
+}
+
+func (ring *KeyRing) updateTrust(reptable *rep.ReputationTable) {
+	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
+
+	for name, _ := range ring.ids {
+		rep, present := reptable.GetSigRep(name)
+		if !present {
+			rep = 0.5
+		}
+
+		probability := ring.phi(name, rep)
+		ring.addNode(name, probability)
+	}
 }
 
 // Update the key table : computes new confidence levels for each key
@@ -321,7 +338,7 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.
 
 // update key ring with given message, if update successful return true
 // an update is successful if the update was performed or enough information is known to declare the message not correct / trustworthy
-func (ring *KeyRing) updateMessage(msg KeyExchangeMessage) bool {
+func (ring *KeyRing) updateMessage(msg KeyExchangeMessage, confidenceOwner float32) bool {
 	receivedKey, err := DeserializeKey(msg.KeyBytes)
 	if err != nil {
 		return true
@@ -341,14 +358,14 @@ func (ring *KeyRing) updateMessage(msg KeyExchangeMessage) bool {
 	err = Verify(msg, kpub)
 
 	if err == nil {
-		ring.Add(record, msg.Origin)
+		ring.Add(record, msg.Origin, confidenceOwner)
 		return true
 	}
 	return false
 }
 
 // Loop over the stored unverified messages and process them
-func (ring *KeyRing) updatePending() {
+func (ring *KeyRing) updatePending(reptable rep.ReputationTable) {
 	ring.pendingMutex.Lock()
 	defer ring.pendingMutex.Unlock()
 
@@ -356,8 +373,11 @@ func (ring *KeyRing) updatePending() {
 	for e := ring.pending.Front(); e != nil; e = e.Next() {
 
 		msg := e.Value.(KeyExchangeMessage)
-
-		if ring.updateMessage(msg) {
+		reputationOwner, ok := reptable.GetSigRep(msg.Owner)
+		if !ok {
+			reputationOwner = 0.5
+		}
+		if ring.updateMessage(msg, reputationOwner) {
 			toRemove.PushBack(e)
 		}
 	}
@@ -368,7 +388,7 @@ func (ring *KeyRing) updatePending() {
 }
 
 // Compute the probability of the node, independently of its current probability
-func (ring KeyRing) phi(name string) float32 {
+func (ring KeyRing) phi(name string, reputation float32) float32 {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
@@ -381,11 +401,10 @@ func (ring KeyRing) phi(name string) float32 {
 	shortest := path.DijkstraFrom(sourceNode, &ring.graph)
 	distance := shortest.WeightTo(destNode)
 
-	reputation := 1.0 // TODO !!!
 	if distance == 0 {
 		distance = 1
 	}
-	phi := math.Min(1.0/distance, reputation)
+	phi := math.Min(1.0/distance, float64(reputation))
 
 	return float32(phi)
 }

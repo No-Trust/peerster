@@ -4,13 +4,7 @@ package rep
     Imports
 */
 
-import (
-
-  "sync"
-
-  "github.com/No-Trust/peerster/common"
-
-)
+import "sync"
 
 /*
     Type definitions
@@ -20,7 +14,7 @@ import (
  * A simple map associating reputations in the form of
  * 32-bit floating point numbers to pointers to peers.
  */
-type ReputationMap map[*common.Peer]float32
+type ReputationMap map[string]float32
 
 /**
  * A data structure assotiating signature-based and
@@ -31,15 +25,6 @@ type ReputationTable struct {
 	sigReps     ReputationMap
 	contribReps ReputationMap
 	mutex       *sync.Mutex
-}
-
-/**
- * A request for a reputation table update, for either
- * signature-based or contribution-based reputations.
- */
-type RepUpdateRequest struct {
-  SigUpdateReq     bool
-  ContribUpdateReq bool
 }
 
 /**

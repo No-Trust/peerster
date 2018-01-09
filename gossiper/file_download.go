@@ -446,11 +446,19 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 	if verifiedUploader && knownOrigin && !validOriginSignature && filereq.Origin != nil {
 		// the file has been sent by Uploader, and its signature by origin is invalid
 		// action : decrease reputation of Uploader
-		// TODO Raja
-	} else if verifiedUploader && knownOrigin && validOriginSignature {
+
+    if record, ok := g.keyRing.GetRecord(*filereq.Origin) ; ok {
+      g.reputationTable.DecreaseSigRep(filereq.Destination, record.Confidence)
+    }
+
+	} else if verifiedUploader && knownOrigin && validOriginSignature && filereq.Origin != nil {
 		// the file has been sent by Uploader, and its signature by origin is valid
 		// action : increase reputation of Uploader
-		// TODO Raja
+
+    if record, ok := g.keyRing.GetRecord(*filereq.Origin) ; ok {
+      g.reputationTable.IncreaseSigRep(filereq.Destination, record.Confidence)
+    }
+
 	}
 
 	if validOriginSignature {

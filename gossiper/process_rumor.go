@@ -59,7 +59,12 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 
 		// process key exchange message
 		if rumor.isKeyExchange() {
-			g.processKeyExchangeMessage(rumor.KeyExchange, remoteaddr)
+			owner := rumor.KeyExchange.Owner
+			repOwner, present := g.reputationTable.GetSigRep(owner)
+			if !present {
+				repOwner = 0.5
+			}
+			g.processKeyExchangeMessage(rumor.KeyExchange, repOwner, remoteaddr)
 		}
 
 		// this is the 'expected' message

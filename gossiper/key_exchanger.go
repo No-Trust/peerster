@@ -8,7 +8,7 @@ import (
 )
 
 // Procedure for inbound KeyExchangeMessage
-func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, remoteaddr *net.UDPAddr) {
+func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, repOwner float32, remoteaddr *net.UDPAddr) {
 	nsig := make([]byte, len(msg.Signature))
 	copy(nsig, msg.Signature)
 	msg.Signature = nsig
@@ -55,7 +55,7 @@ func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, remot
 	// the signature is valid
 
 	// update key ring
-	g.keyRing.Add(record, msg.Origin)
+	g.keyRing.Add(record, msg.Origin, repOwner)
 
 	return
 }

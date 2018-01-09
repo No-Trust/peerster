@@ -33,28 +33,32 @@ func repUpdateRequests(g *Gossiper, reptimer uint, wg sync.WaitGroup) {
 
     highestRepTable := g.reputationTable.MostReputablePeers(rep.REP_REQ_PEER_COUNT)
 
-    highestRepTable.ForEachSigRep(func(peer *common.Peer, _ float32) {
+    highestRepTable.ForEachSigRep(func(peer string, _ float32) {
 
-      g.gossipOutputQueue <- &Packet {
-        GossipPacket : GossipPacket {
-          RepUpdateReq : &rep.RepUpdateRequest {
-            SigUpdateReq : true,
+      nextHop := g.routingTable.Get(peer)
+
+      if nextHop != "" {
+
+        g.gossipOutputQueue <- &Packet {
+          GossipPacket : GossipPacket {
+            Private : &PrivateMessage {
+              RepSigUpdateReq : true,
+            },
           },
-        },
-        Destination  : peer.Address,
+          Destination: stringToUDPAddr(nextHop),
+        }
+
       }
 
     })
 
-    highestRepTable.ForEachContribRep(func(peer *common.Peer, _ float32) {
+    highestRepTable.ForEachContribRep(func(peer string, _ float32) {
 
       g.gossipOutputQueue <- &Packet {
         GossipPacket : GossipPacket {
-          RepUpdateReq : &rep.RepUpdateRequest {
-            ContribUpdateReq : true,
-          },
+          RepContribUpdateReq : true,
         },
-        Destination  : peer.Address,
+        Destination  : stringToUDPAddr(peer),
       }
 
     })
@@ -76,27 +80,27 @@ func repLogs(g *Gossiper, wg sync.WaitGroup) {
 
 }
 
-func (g *Gossiper) processRepUpdateReq(request *rep.RepUpdateRequest, sender *common.Peer) {
+func (g *Gossiper) processContribRepUpdateReq(sender *common.Peer) {
 
-  var repUpdate *rep.RepUpdate
+  // var repUpdate *rep.RepUpdate
 
-  if request.SigUpdateReq {
-    repUpdate = g.reputationTable.GetSigUpdate()
-  } else if request.ContribUpdateReq {
-    repUpdate = g.reputationTable.GetContribUpdate()
-  } else {
+  // if request.SigUpdateReq {
+    // repUpdate = g.reputationTable.GetSigUpdate()
+  // } else if request.ContribUpdateReq {
+    // repUpdate = g.reputationTable.GetContribUpdate()
+  // } else {
 
-    err := "ERROR: Invalid reputation update request."
+    // err := "ERROR: Invalid reputation update request."
 
-    g.standardOutputQueue <- &err
+    // g.standardOutputQueue <- &err
 
-    return
+    // return
 
-  }
+  // }
 
   g.gossipOutputQueue <- &Packet {
 		GossipPacket : GossipPacket {
-			RepUpdate : repUpdate,
+			RepUpdate : g.reputationTable.GetContribUpdate(),
 		},
 		Destination  : sender.Address,
 	}
