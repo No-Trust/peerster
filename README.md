@@ -26,8 +26,8 @@ Therefore, we recommand to launch a first time the gossipers for them to generat
 
 #### Testing
 
-For testing, please check our test files setup.sh, launch.sh and clean.sh.
-setup.sh is used to generate the keys. It may fail to finish properly if the processor is not fast enough. In this case please run clean.sh and change the sleep value in  setup.sh to something bigger. (Generating keys take a long time)
+For testing, please check our test files setup.sh, launch.sh and clean.sh in folder tests/authentic_file_sharing.
+setup.sh is used to generate the keys. It may fail to finish properly if the processor is not fast enough. In this case please run clean.sh and change the sleep value in  setup.sh to something bigger. (Generating keys may take a long time)
 
 ##### Gossipers
 
@@ -37,7 +37,7 @@ Will generate the folder structure and the keys.
 
 > sh launch.sh
 
-Will instantiate the gossipers and give to each of them some keys of the others.
+Will instantiate the gossipers and give to each of them some keys of the others to sign (bootstrap).
 
 > sh clean.sh
 
@@ -65,3 +65,8 @@ Please note that no notifications are sent to the gui yet, we apologize for this
 
 ##### CLI
 Same as for previous homeworks.
+
+For more details :
+> ./gossiper -h
+> ./gui -h
+> ./cli -h
