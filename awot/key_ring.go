@@ -216,7 +216,7 @@ func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
 		ticker := time.NewTicker(time.Second * time.Duration(5)) // every 5 sec
 		defer ticker.Stop()
 		for _ = range ticker.C {
-			//ring.updateTrust(*reptable)
+			ring.updateTrust(*reptable)
 			ring.updatePending(*reptable)
 			ring.updateConfidence()
 			//ring.Save("ring")
@@ -224,17 +224,14 @@ func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
 	}()
 }
 
-func (ring *KeyRing) updateTrust(reptable *rep.ReputationTable) {
-	ring.mutex.Lock()
-	defer ring.mutex.Unlock()
+func (ring *KeyRing) updateTrust(reptable rep.ReputationTable) {
 
 	for name, _ := range ring.ids {
 		rep, present := reptable.GetSigRep(name)
 		if !present {
 			rep = 0.5
 		}
-
-		probability := ring.phi(name, rep)
+		probability := ring.phi(name, 2 * rep)
 		ring.addNode(name, probability)
 	}
 }
@@ -377,7 +374,7 @@ func (ring *KeyRing) updatePending(reptable rep.ReputationTable) {
 		if !ok {
 			reputationOwner = 0.5
 		}
-		if ring.updateMessage(msg, reputationOwner) {
+		if ring.updateMessage(msg, 2 * reputationOwner) {
 			toRemove.PushBack(e)
 		}
 	}
