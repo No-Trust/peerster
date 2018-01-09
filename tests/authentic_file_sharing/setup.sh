@@ -31,6 +31,8 @@ cp ../../gossiper/gossiper F/gossiper/gossiper
 cp ../../gossiper/gossiper G/gossiper/gossiper
 cp ../../cli/cli ./
 cp ../../gui/gui ./
+mkdir -p public
+cp ../../gui/public/* ./public/
 
 startGossip(){
 	local name=$1
