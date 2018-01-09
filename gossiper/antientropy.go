@@ -15,18 +15,22 @@ func antiEntropy(g *Gossiper, etimer uint, wg sync.WaitGroup) {
 	defer ticker.Stop()
 
 	for _ = range ticker.C {
-		A := g.peerSet.RandomPeer()
-		if A != nil {
+
+		randPeer := g.reputationTable.ContribRandomPeer()
+
+		if randPeer != "" {
 			// send status packet
 
+      addr := stringToUDPAddr(randPeer)
+
 			status := g.vectorClock.Copy()
-			g.standardOutputQueue <- status.AntiEntropyString(&A.Address)
+			g.standardOutputQueue <- status.AntiEntropyString(&addr)
 
 			g.gossipOutputQueue <- &Packet{
 				GossipPacket: GossipPacket{
 					Status: status,
 				},
-				Destination: A.Address,
+				Destination: addr,
 			}
 		}
 	}

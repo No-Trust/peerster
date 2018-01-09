@@ -60,11 +60,17 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			g.gossiperWaiters[ackID] = nil
 			delete(g.gossiperWaiters, ackID)
 			g.waitersMutex.Unlock()
-			nextDestPeer := g.peerSet.RandomPeer()
-			if destPeer != nil {
-				go g.rumormonger(rumor, nextDestPeer)
+
+      randPeer := g.reputationTable.ContribRandomPeer()
+
+			if randPeer != "" {
+				go g.rumormonger(rumor, &common.Peer {
+				  Address : stringToUDPAddr(randPeer),
+				})
 			}
+
 			return
+
 		case <-statusChannel:
 			// received the ack before timeout
 			timer.Stop()
@@ -77,10 +83,15 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			// rumormonger again with probability 1/2
 			if flipCoin() {
 				g.standardOutputQueue <- CoinFlipString(&destPeer.Address)
-				nextDestPeer := g.peerSet.RandomPeer()
-				if destPeer != nil {
-					go g.rumormonger(rumor, nextDestPeer)
+
+        randPeer := g.reputationTable.ContribRandomPeer()
+
+				if randPeer != "" {
+					go g.rumormonger(rumor, &common.Peer {
+					  Address : stringToUDPAddr(randPeer),
+					})
 				}
+
 			}
 			return
 		}

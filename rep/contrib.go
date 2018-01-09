@@ -1,8 +1,26 @@
 package rep
 
 /*
+    Imports
+*/
+
+import (
+  "math/rand"
+  "time"
+)
+
+/*
     Functions
 */
+
+/**
+ * Initialization function.
+ */
+func init() {
+
+  rand.Seed(time.Now().UTC().UnixNano())
+
+}
 
 /**
  * Checks if the given peer has a contribution-based
@@ -97,5 +115,37 @@ func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
     CONTRIB_ONE_MINUS_ALPHA * table.contribReps[peer]
 
   table.mutex.Unlock()
+
+}
+
+func (table *ReputationTable) ContribRandomPeer() string {
+
+  var randPeer string
+
+  var total    float32 = 0
+  var counter  float32 = 0
+
+  table.mutex.Lock()
+
+  for _, rep := range table.contribReps {
+    total += rep
+  }
+
+  random := rand.Float32() * total
+
+  for peer, rep := range table.contribReps {
+
+    counter += rep
+
+    if random < counter {
+      randPeer = peer
+      break
+    }
+
+  }
+
+  table.mutex.Unlock()
+
+  return randPeer
 
 }
