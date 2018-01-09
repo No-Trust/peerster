@@ -20,8 +20,8 @@ const CONTRIB_ALPHA           float32 = 0.4
 const CONTRIB_ONE_MINUS_ALPHA float32 = 1 - CONTRIB_ALPHA
 
 // Reputation update requests
-const DEFAULT_REP_REQ_TIMER   uint    = 60
-const REP_REQ_PEER_COUNT      uint    =  3
+const DEFAULT_REP_REQ_TIMER   uint    = 8
+const REP_REQ_PEER_COUNT      uint    = 3
 
 const UPDATE_WEIGHT_LIMIT     float32 = 0.15
 

@@ -77,6 +77,8 @@ func (table *ReputationTable) IncreaseContribRep(peer string) {
  */
 func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
 
+  table.InitContribRepForPeer(peer)
+
   // The new value to use in the moving average formula
   var newValue float32
 
@@ -87,10 +89,6 @@ func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
   } else {
     newValue = MIN_REP
   }
-
-  // Initialize the contribution-based reputation
-  // for this peer if it does not have one
-  table.InitContribRepForPeer(peer)
 
   table.mutex.Lock()
 
