@@ -110,11 +110,17 @@ func (g *Gossiper) compareStateAndProcess(rumor *RumorMessage, status *StatusPac
 		if flipCoin() {
 			g.standardOutputQueue <- CoinFlipString(&destPeer.Address)
 			// continue
-			destPeer := g.peerSet.RandomPeer()
-			if destPeer != nil {
-				go g.rumormonger(rumor, destPeer)
+
+			randPeer := g.reputationTable.ContribRandomPeer()
+
+			if randPeer != "" {
+				go g.rumormonger(rumor, &common.Peer {
+  			  Address : stringToUDPAddr(randPeer),
+  			})
 			}
+
 			return
+
 		} else {
 			// stop
 			return

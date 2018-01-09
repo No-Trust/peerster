@@ -115,5 +115,5 @@ cp keys/E.pub keysG/
 # b4a4936e0f3153ea38b787eead84a79f5b17e806a4c09d0546903445607ee91b
 cp file3.jpg G/gossiper/
 # G is given file2.txt
-# 97c839ada61f59f61c81b20ff1f4948ee8c3635bf21606ca06a1d19c957d8ec2
+# 5e12077a3d13bfc677cb0feb5aa9ebe6728b7d2f404b0f4426eb1fc5a4f06d16
 cp file2.txt G/gossiper/
