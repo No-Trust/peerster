@@ -57,6 +57,12 @@ let messages = {};
 let rumorReadIndexes = {};
 let messageReadIndexes = {};
 
+// Reputations
+let reputations = {
+    SigReps     : {},
+    ContribReps : {}
+};
+
 // UI
 let activeChat;
 let sendMode = SEND_MODES.TEXT;
@@ -102,6 +108,14 @@ function copyTextToClipboard(text) {
 
 }
 
+function clamp(value, min, max) {
+    return (value <= min) ? min : (value >= max) ? max : value;
+}
+
+function remapValueInDomain(value, inMin, inMax, outMin, outMax) {
+    return ((clamp(value, inMin, inMax) - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
+}
+
 function chatsTabIsSelected() {
     return 'selected' in CHATS_TAB.dataset;
 }
@@ -116,7 +130,7 @@ function activateChat(chatName) {
 
     chats.forEach(chat => {
         delete chat.dataset.selected;
-        if (chat.innerHTML === chatName) {
+        if (chat.children[0].innerHTML === chatName) {
             chat.dataset.selected = '';
         }
     });
@@ -189,25 +203,46 @@ function addPeer(peer) {
     }
 
     let timeout;
+
+    const CARD = document.createElement('DIV');
+    CARD.classList.add('cards', 'peer-cards');
+
     const PEER = document.createElement('P');
-    PEER.classList.add('cards', 'peer-cards');
+    PEER.classList.add('titles');
     PEER.innerHTML = peer;
 
-    PEER.addEventListener('click', copy);
+    const REP = document.createElement('P');
+    REP.classList.add('reputations');
+    REP.innerHTML = '-';
 
-    LEFT_PANE_LIST.appendChild(PEER);
+    CARD.addEventListener('click', copy);
+
+    CARD.appendChild(PEER);
+    CARD.appendChild(REP);
+    LEFT_PANE_LIST.appendChild(CARD);
+
 }
 
 function addChat(origin) {
+
+    const CARD = document.createElement('DIV');
+    CARD.classList.add('cards', 'peer-cards');
+
     const CHAT = document.createElement('P');
-    CHAT.classList.add('cards', 'chat-cards');
+    CHAT.classList.add('titles');
     CHAT.innerHTML = origin;
+
+    const REP = document.createElement('P');
+    REP.classList.add('reputations');
+    REP.innerHTML = '-';
 
     let chatName = (LEFT_PANE_LIST.children.length === 0) ? RUMOR_CHAT : origin;
 
-    CHAT.addEventListener('click', event => activateChat(chatName));
+    CARD.addEventListener('click', event => activateChat(chatName));
 
-    LEFT_PANE_LIST.appendChild(CHAT);
+    CARD.appendChild(CHAT);
+    CARD.appendChild(REP);
+    LEFT_PANE_LIST.appendChild(CARD);
 }
 
 function updateChat() {
@@ -251,6 +286,32 @@ function updateChat() {
         }
 
     }
+
+}
+
+function updateReputations() {
+
+    let reps = chatsTabIsSelected() ? reputations.SigReps : reputations.ContribReps;
+
+    if (reps === null) { return; }
+
+    Array.from(LEFT_PANE_LIST.children).forEach(peer => {
+
+        const ADDRESS   = peer.children[0];
+        const REP_FIELD = peer.children[1];
+
+        if (ADDRESS.innerHTML in reps) {
+
+            const REP = reps[ADDRESS.innerHTML];
+
+            const RED   = Math.round(remapValueInDomain(- REP, -1, -0.5, 0, 255));
+            const GREEN = Math.round(remapValueInDomain(  REP,  0,  0.5, 0, 255));
+            REP_FIELD.style.setProperty('color', `rgb(${RED}, ${GREEN}, 0)`);
+            REP_FIELD.innerHTML = parseFloat(`${REP}`.slice(0, 5));
+
+        }
+
+    });
 
 }
 
@@ -376,6 +437,20 @@ function getOrigins() {
             }
 
         })).catch(console.error);
+
+}
+
+function getReputations() {
+
+    fetch(`http://${SERVER_ADDRESS}:${SERVER_PORT}/reputations`)
+        .then(response => response.json())
+        .then(data => {
+
+            reputations = data;
+
+            updateReputations();
+
+        }).catch(console.error);
 
 }
 
@@ -572,4 +647,5 @@ setInterval(() => {
     getMessages();
     getPeers();
     getOrigins();
+    getReputations();
 }, 1000);

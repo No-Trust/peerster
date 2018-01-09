@@ -29,7 +29,7 @@ type ReputationTable struct {
 
 /**
  * A reputation table update, holding either signature-
- * based or contribution-based reputations.
+ * based and/or contribution-based reputations.
  */
 type RepUpdate struct {
   SigReps     ReputationMap

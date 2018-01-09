@@ -12,6 +12,22 @@ import "github.com/No-Trust/peerster/common"
 
 /**
  * Returns a new reputation update with the signature-
+ * based and contribution-based reputations in this table.
+ */
+func (table *ReputationTable) GetUpdate() *RepUpdate {
+
+  sigUpdate     := table.GetSigUpdate()
+  contribUpdate := table.GetContribUpdate()
+
+  return &RepUpdate {
+    SigReps     : sigUpdate.SigReps,
+    ContribReps : contribUpdate.ContribReps,
+  }
+
+}
+
+/**
+ * Returns a new reputation update with the signature-
  * based reputations in this table.
  */
 func (table *ReputationTable) GetSigUpdate() *RepUpdate {

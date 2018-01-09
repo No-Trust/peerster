@@ -67,9 +67,6 @@ body {
     margin: var(--margin);
     border-radius: var(--border-radius);
     
-    line-height: 40px;
-    text-align: center;
-    
     background-color: #1e2022;
     
     cursor: pointer;
@@ -82,6 +79,21 @@ body {
 .cards:hover,
 .cards[data-selected] {
     opacity: 1;
+}
+
+.cards > p {
+    margin: var(--margin);
+    line-height: 40px;
+}
+
+.cards > .titles {
+    text-align: center;
+}
+
+.cards > .reputations {
+    position: absolute;
+    top: calc(var(--margin) * -1);
+    right: 0;
 }
 
 #left-pane-input-container {
