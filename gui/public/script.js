@@ -35,6 +35,8 @@ const SEND_MODES = Object.freeze({
     FILES : 1
 });
 
+const REP_PREC = 3;
+
 /*
     Variables
 */
@@ -307,7 +309,8 @@ function updateReputations() {
             const RED   = Math.round(remapValueInDomain(- REP, -1, -0.5, 0, 255));
             const GREEN = Math.round(remapValueInDomain(  REP,  0,  0.5, 0, 255));
             REP_FIELD.style.setProperty('color', `rgb(${RED}, ${GREEN}, 0)`);
-            REP_FIELD.innerHTML = parseFloat(`${REP}`.slice(0, 5));
+            REP_FIELD.innerHTML = parseFloat(
+                `${Math.trunc(REP * (10 ** REP_PREC)) * (10 ** - REP_PREC)}`.slice(0, 2 + REP_PREC));
 
         }
 
