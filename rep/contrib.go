@@ -5,6 +5,22 @@ package rep
 */
 
 /**
+ * Checks if the given peer has a contribution-based
+ * reputation and if it does not, initializes it.
+ */
+func (table *ReputationTable) InitContribRepForPeer(peer string) {
+
+  table.mutex.Lock()
+
+  if _, ok := table.contribReps[peer] ; !ok {
+    table.contribReps[peer] = INIT_REP
+  }
+
+  table.mutex.Unlock()
+
+}
+
+/**
  * Returns the contribution-based reputation of the given peer.
  */
 func (table *ReputationTable) GetContribRep(peer string) (/*rep*/ float32, /*ok*/ bool) {
@@ -72,11 +88,11 @@ func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
     newValue = MIN_REP
   }
 
-  table.mutex.Lock()
+  // Initialize the contribution-based reputation
+  // for this peer if it does not have one
+  table.InitContribRepForPeer(peer)
 
-  if _, ok := table.contribReps[peer] ; !ok {
-    table.contribReps[peer] = INIT_REP
-  }
+  table.mutex.Lock()
 
   // Update the peer's reputation
   table.contribReps[peer] = CONTRIB_ALPHA * newValue +

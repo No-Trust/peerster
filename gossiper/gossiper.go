@@ -127,6 +127,7 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 	}
 
 	g.peerSet.Add(A) // adding A to the known peers
+	g.reputationTable.InitContribRepForPeer(addrToString(A.Address))
 
 	// demultiplex packets
 	if pkt.Rumor != nil {
