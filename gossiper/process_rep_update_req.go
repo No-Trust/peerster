@@ -82,21 +82,8 @@ func repLogs(g *Gossiper, wg sync.WaitGroup) {
 
 func (g *Gossiper) processContribRepUpdateReq(sender *common.Peer) {
 
-  // var repUpdate *rep.RepUpdate
-
-  // if request.SigUpdateReq {
-    // repUpdate = g.reputationTable.GetSigUpdate()
-  // } else if request.ContribUpdateReq {
-    // repUpdate = g.reputationTable.GetContribUpdate()
-  // } else {
-
-    // err := "ERROR: Invalid reputation update request."
-
-    // g.standardOutputQueue <- &err
-
-    // return
-
-  // }
+  log := "SENDING CONTRIB-REP UPDATE TO " + addrToString(sender.Address)
+  g.standardOutputQueue <- &log
 
   g.gossipOutputQueue <- &Packet {
 		GossipPacket : GossipPacket {
@@ -104,5 +91,17 @@ func (g *Gossiper) processContribRepUpdateReq(sender *common.Peer) {
 		},
 		Destination  : sender.Address,
 	}
+
+}
+
+func (g *Gossiper) processContribRepUpdate(update *rep.RepUpdate, sender *common.Peer) {
+
+  log := "RECEIVED CONTRIB-REP UPDATE FROM " + addrToString(sender.Address) + "\nPRINTING OLD REPS AND NEW REPS"
+  g.standardOutputQueue <- &log
+  g.reputationTable.Log()
+
+  g.reputationTable.UpdateReputations(update, addrToString(sender.Address))
+
+  g.reputationTable.Log()
 
 }

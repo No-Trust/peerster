@@ -23,6 +23,7 @@ type ClientPacket struct {
 	NewPrivateMessage *NewPrivateMessage // private message sent from client or new private message received (update client)
 	Notification      *string            // notification from gossiper to the client
 	KeyRingJSON       *[]byte            // JSON format of the key ring
+	Reputations       *RepUpdate
 }
 
 type NewMessage struct {
@@ -49,4 +50,19 @@ type FileRequest struct {
 	Destination string
 	FileName    string
 	Origin      *string // request a file with origin
+}
+
+/**
+ * A simple map associating reputations in the form of
+ * 32-bit floating point numbers to pointers to peers.
+ */
+type ReputationMap map[string]float32
+
+/**
+ * A reputation table update, holding signature-
+ * based and contribution-based reputations.
+ */
+type RepUpdate struct {
+  SigReps     ReputationMap
+  ContribReps ReputationMap
 }

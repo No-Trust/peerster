@@ -25,6 +25,8 @@ var peersMutex = &sync.Mutex{}
 var messages []common.NewMessage
 var privateMessages []common.NewPrivateMessage
 var ids []string
+var reputations common.RepUpdate
+var repMutex = &sync.Mutex {}
 
 type WebMessage struct {
 	Message     string
@@ -100,6 +102,7 @@ func main() {
 	r.HandleFunc("/reachable-node", getReachableNodesHandler).Methods("GET")   // request update on reachable nodes
 	r.HandleFunc("/keyring", getRingHandler).Methods("GET")                    // request ring
 	r.HandleFunc("/ring.json", getRingJSONHandler).Methods("GET")              // request ring json
+  r.HandleFunc("/reputations", getReputationsHandler).Methods("GET")         // request update on reputations
 
 	http.Handle("/", r)
 
@@ -158,6 +161,12 @@ func handleServerMessage(buf []byte, remoteaddr *net.UDPAddr) {
 		// write json
 		writeKeyRing(*pkt.KeyRingJSON)
 	}
+	if pkt.Reputations != nil {
+    // Update reputations
+    repMutex.Lock()
+    reputations = *pkt.Reputations
+    repMutex.Unlock()
+	}
 
 }
 
@@ -205,6 +214,20 @@ func getRingJSONHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(bytes)
 	}
 	// http.ServeFile(w, r, "public/ring.json")
+}
+
+func getReputationsHandler(w http.ResponseWriter, r *http.Request) {
+
+  repMutex.Lock()
+
+  buf, err := json.Marshal(reputations)
+  common.CheckError(err)
+
+  repMutex.Unlock()
+
+  w.Header().Set("Content-Type", "application/json")
+	w.Write(buf)
+
 }
 
 func getRingHandler(w http.ResponseWriter, r *http.Request) {

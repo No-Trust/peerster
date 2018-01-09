@@ -157,12 +157,22 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 		if err != nil {
 			graph = nil
 		}
+
+    // Get reputation update
+    repUpdate := g.reputationTable.GetUpdate()
+
+    update := common.RepUpdate {
+      SigReps     : common.ReputationMap(repUpdate.SigReps),
+      ContribReps : common.ReputationMap(repUpdate.ContribReps),
+    }
+
 		// sending
 		g.clientOutputQueue <- &common.Packet{
 			ClientPacket: common.ClientPacket{
 				ReachableNodes: &rNodes,
 				PeerSlice:      &cpy,
 				KeyRingJSON:    &graph,
+				Reputations:    &update,
 			},
 			Destination: *remoteaddr,
 		}

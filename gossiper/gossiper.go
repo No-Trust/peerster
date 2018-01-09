@@ -128,6 +128,8 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 	}
 
 	g.peerSet.Add(A) // adding A to the known peers
+
+  // Initialize A's contrib-based reputation if necessary
 	g.reputationTable.InitContribRepForPeer(addrToString(A.Address))
 
 	// demultiplex packets
@@ -157,7 +159,7 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
   }
   if pkt.RepUpdate != nil {
     // process contrib-based reputation update
-    go g.reputationTable.UpdateReputations(pkt.RepUpdate, addrToString(A.Address))
+    go g.processContribRepUpdate(pkt.RepUpdate, &A)
   }
 
 	return

@@ -11,6 +11,22 @@ import "github.com/No-Trust/peerster/common"
 */
 
 /**
+ * Checks if the given peer has a signature-based
+ * reputation and if it does not, initializes it.
+ */
+func (table *ReputationTable) InitSigRepForPeer(peer string) {
+
+  table.mutex.Lock()
+
+  if _, ok := table.sigReps[peer] ; !ok {
+    table.sigReps[peer] = INIT_REP
+  }
+
+  table.mutex.Unlock()
+
+}
+
+/**
  * Returns the signature-based reputation of the given peer.
  */
 func (table *ReputationTable) GetSigRep(peer string) (/*rep*/ float32, /*ok*/ bool) {
@@ -56,11 +72,9 @@ func (table *ReputationTable) IncreaseSigRep(peer string, confidence float32) {
  */
 func (table *ReputationTable) updateSigRep(peer string, confidence float32, correctSig bool) {
 
-  table.mutex.Lock()
+  table.InitSigRepForPeer(peer)
 
-  if _, ok := table.sigReps[peer] ; !ok {
-    table.sigReps[peer] = INIT_REP
-  }
+  table.mutex.Lock()
 
   // If the signature is correct, increase the reputation
   // of the sending peer linearly by a factor that depends

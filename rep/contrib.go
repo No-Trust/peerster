@@ -56,7 +56,7 @@ func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ string, /
  * Updates the contribution-based reputation of a
  * given peer to which data was sent.
  */
-func (table *ReputationTable) UpdateContribRepDataSent(peer string) {
+func (table *ReputationTable) DecreaseContribRep(peer string) {
   table.updateContribRep(peer, false)
 }
 
@@ -64,7 +64,7 @@ func (table *ReputationTable) UpdateContribRepDataSent(peer string) {
  * Updates the contribution-based reputation of a
  * given peer from which data was received.
  */
-func (table *ReputationTable) UpdateContribRepDataReceived(peer string) {
+func (table *ReputationTable) IncreaseContribRep(peer string) {
   table.updateContribRep(peer, true)
 }
 
@@ -77,6 +77,8 @@ func (table *ReputationTable) UpdateContribRepDataReceived(peer string) {
  */
 func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
 
+  table.InitContribRepForPeer(peer)
+
   // The new value to use in the moving average formula
   var newValue float32
 
@@ -87,10 +89,6 @@ func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
   } else {
     newValue = MIN_REP
   }
-
-  // Initialize the contribution-based reputation
-  // for this peer if it does not have one
-  table.InitContribRepForPeer(peer)
 
   table.mutex.Lock()
 
