@@ -56,7 +56,7 @@ func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ string, /
  * Updates the contribution-based reputation of a
  * given peer to which data was sent.
  */
-func (table *ReputationTable) UpdateContribRepDataSent(peer string) {
+func (table *ReputationTable) DecreaseContribRep(peer string) {
   table.updateContribRep(peer, false)
 }
 
@@ -64,7 +64,7 @@ func (table *ReputationTable) UpdateContribRepDataSent(peer string) {
  * Updates the contribution-based reputation of a
  * given peer from which data was received.
  */
-func (table *ReputationTable) UpdateContribRepDataReceived(peer string) {
+func (table *ReputationTable) IncreaseContribRep(peer string) {
   table.updateContribRep(peer, true)
 }
 

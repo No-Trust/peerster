@@ -19,6 +19,9 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 		Destination: destPeer.Address,
 	}
 
+  // Decrease contribution-based reputation of receiver
+  g.reputationTable.DecreaseContribRep(addrToString(destPeer.Address))
+
 	// and wait for status message
 	statusChannel := make(chan *PeerStatus)
 	// format : id/ip:port/nextID
