@@ -48,11 +48,17 @@ func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, repOw
 		// either :
 		//	- error in network layers below (rare)
 		//	- malicious sender : either true sender, or MITM
-		// TODO Raja ;-)
+
+    // Decrease sender's reputation
+    // g.reputationTable.DecreaseSigRep(/* OOPS! WE NEED SENDER'S IDENTIFIER */, record.Confidence)
+
 		return
 	}
 
 	// the signature is valid
+
+  // Increase sender's reputation
+  // g.reputationTable.IncreaseSigRep(/* OOPS! WE NEED SENDER'S IDENTIFIER */, record.Confidence)
 
 	// update key ring
 	g.keyRing.Add(record, msg.Origin, repOwner)
