@@ -37,7 +37,7 @@ in peerster/gossiper, typical example of (local) use :
 
 > ./gossiper -UIPort=10000 -gossipAddr=127.0.0.1:5000 -keys=../../keysA -name=A -peers=127.0.0.1:5001,127.0.0.1:5002
 
-Bootstraping Publick Keys :<br>
+Bootstraping Public Keys :<br>
 This option is important and must be given. To launch a peer named A, we recommend creating a folder named keysA and place all fully trusted keys in it, with filenames like 'peerName.pub' where 'peerName' is the name of the peer in the network having this public key. The filename is necessary for the system to work as intended as it gives the name of the peer associated with the key. Then please link the folder to the gossiper by specifying its path in the flag -keys=_ .
 
 When launching a gossiper, in the upper folder it will check for the presence of files private.key and peerName.pub, if it does not see these files, the gossiper will generate a new key and save the files.
