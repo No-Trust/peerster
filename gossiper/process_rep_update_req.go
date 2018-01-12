@@ -5,7 +5,6 @@ package main
 */
 
 import (
-	"sync"
 	"time"
 
 	"github.com/No-Trust/peerster/common"
