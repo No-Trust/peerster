@@ -1,14 +1,5 @@
+// Command Line Client for Peerster
 package main
-
-/*
- * Command Line Client that sends a message to a local Peerster node, and more.
- * Usage :
- *    ./cli -UIPort=port -msg=message -Dest=destination
- * port : client port, default = 10000
- * message : message to send, required, private message if dest is set
- * destination : destination of the private message, optional
- * file : filename of the file to be indexd, optional
- */
 
 import (
 	"encoding/hex"
@@ -66,7 +57,7 @@ func main() {
 			fmt.Println("Sending file indexing request")
 
 			// add file to the message
-			pkt.NewFile = &common.NewFile{*filename}
+			pkt.NewFile = &common.NewFile{Path: *filename}
 		}
 	}
 

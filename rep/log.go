@@ -1,65 +1,65 @@
 package rep
 
 /*
-    Imports
+   Imports
 */
 
 import (
-  "fmt"
-  "os"
-  "text/tabwriter"
+	"fmt"
+	"os"
+	"text/tabwriter"
 )
 
 /*
-    Global Variables
+   Global Variables
 */
 
 var writer *tabwriter.Writer
 
 /*
-    Initialization Function
+   Initialization Function
 */
 
 func init() {
 
-  writer = tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+	writer = tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 
 }
 
 /*
-    Functions
+   Functions
 */
 
 func (table *ReputationTable) Log() {
 
-  fmt.Println("\n************ Reputations ************\n")
+	fmt.Println("************ Reputations ************")
 
-  table.mutex.Lock()
+	table.mutex.Lock()
 
-  fmt.Println("Signature-based Reputations:")
-  fmt.Fprintln(writer, "Peer \t Sig-Rep")
+	fmt.Println("Signature-based Reputations:")
+	fmt.Fprintln(writer, "Peer \t Sig-Rep")
 
-  for peer, rep := range table.sigReps {
+	for peer, rep := range table.sigReps {
 
-    fmt.Fprintln(writer, peer, "\t", rep)
+		fmt.Fprintln(writer, peer, "\t", rep)
 
-  }
+	}
 
-  writer.Flush()
+	writer.Flush()
 
-  fmt.Println("\nContribution-based Reputations:")
-  fmt.Fprintln(writer, "Peer \t Contrib-Rep")
+	fmt.Println("\nContribution-based Reputations:")
+	fmt.Fprintln(writer, "Peer \t Contrib-Rep")
 
-  for peer, rep := range table.contribReps {
+	for peer, rep := range table.contribReps {
 
-    fmt.Fprintln(writer, peer, "\t", rep)
+		fmt.Fprintln(writer, peer, "\t", rep)
 
-  }
+	}
 
-  writer.Flush()
+	writer.Flush()
 
-  table.mutex.Unlock()
+	table.mutex.Unlock()
 
-  fmt.Println("\n*************************************\n")
+	fmt.Println("*************************************")
 
 }

@@ -57,7 +57,6 @@ func (r *RoutingTable) AddNextHop(origin string, remoteaddr *net.UDPAddr) {
 		return
 	}
 
-
 	r.mutex.Lock()
 	r.table[origin] = remoteaddrStr
 	r.mutex.Unlock()
@@ -87,13 +86,11 @@ func (r *RoutingTable) GetIds() []string {
 }
 
 // Implementation of the simplified DSDV routing algorithm.
-func routerumor(g *Gossiper, rtimer uint, wg sync.WaitGroup) {
+func routerumor(g *Gossiper, rtimer uint) {
 	/*
 	 * Thread responsible for sending route rumor messages
 	 * Sends a route rumor every rtimer seconds
 	 */
-
-	defer wg.Done()
 
 	ticker := time.NewTicker(time.Second * time.Duration(rtimer)) // every rtimer sec
 	defer ticker.Stop()

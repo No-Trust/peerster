@@ -11,8 +11,8 @@ import (
 	"github.com/No-Trust/peerster/rep"
 	"github.com/dedis/protobuf"
 	"net"
-	"time"
 	"sync"
+	"time"
 )
 
 // Gossiper implementation
@@ -78,26 +78,56 @@ func (g *Gossiper) Start() {
 	wg.Add(8)
 
 	// Standard output writer Thread
-	go fmtwriter(g.standardOutputQueue, wg)
+	go func() {
+		defer wg.Done()
+		fmtwriter(g.standardOutputQueue)
+	}()
 	// Client Listener Thread
-	go listener(g.Parameters.UIConn, g, handleClientMessage, wg)
+	go func() {
+		defer wg.Done()
+		listener(g.Parameters.UIConn, g, handleClientMessage)
+	}()
 	// Client Writer Thread
-	go clientwriter(g.Parameters.UIConn, g.clientOutputQueue, wg)
+	go func() {
+		defer wg.Done()
+		clientwriter(g.Parameters.UIConn, g.clientOutputQueue)
+	}()
 	// Gossiper Listener Thread
-	go listener(g.Parameters.GossipConn, g, handleGossiperMessage, wg)
+	go func() {
+		defer wg.Done()
+		listener(g.Parameters.GossipConn, g, handleGossiperMessage)
+	}()
 	// Gossiper Writer Thread
-	go writer(g, g.Parameters.GossipConn, g.gossipOutputQueue, wg)
+	go func() {
+		defer wg.Done()
+		writer(g, g.Parameters.GossipConn, g.gossipOutputQueue)
+	}()
+
 	// Anti Entropy Thread
-	go antiEntropy(g, g.Parameters.Etimer, wg)
+	go func() {
+		defer wg.Done()
+		antiEntropy(g, g.Parameters.Etimer)
+	}()
+
 	// Route Rumor Sender Thread
-	go routerumor(g, g.Parameters.Rtimer, wg)
+	go func() {
+		defer wg.Done()
+		routerumor(g, g.Parameters.Rtimer)
+	}()
+
 	// Reputation Update Requests Thread
-	go repUpdateRequests(g, g.Parameters.Reptimer, wg)
-  // Reputation Logs Thread
-  go repLogs(g, wg)
+	go func() {
+		defer wg.Done()
+		repUpdateRequests(g, g.Parameters.Reptimer)
+	}()
+
+	// Reputation Logs Thread
+	go func() {
+		defer wg.Done()
+		repLogs(g)
+	}()
 
 	fmt.Println("INITIALIZATION DONE")
-
 
 	// Broadcast a route rumor message
 	broadcastNewRoute(g)
@@ -106,7 +136,6 @@ func (g *Gossiper) Start() {
 
 	// Send signatures
 	g.SendSignatures()
-
 
 	// waiting for all goroutines to terminate
 	wg.Wait()
@@ -129,7 +158,7 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 
 	g.peerSet.Add(A) // adding A to the known peers
 
-  // Initialize A's contrib-based reputation if necessary
+	// Initialize A's contrib-based reputation if necessary
 	g.reputationTable.InitContribRepForPeer(addrToString(A.Address))
 
 	// demultiplex packets
@@ -153,14 +182,14 @@ func handleGossiperMessage(buf []byte, remoteaddr *net.UDPAddr, g *Gossiper) {
 		// process data reply
 		go g.processDataReply(pkt.DataReply, remoteaddr)
 	}
-  if pkt.RepContribUpdateReq {
-    // process contrib-based reputation update request
-    go g.processContribRepUpdateReq(&A)
-  }
-  if pkt.RepUpdate != nil {
-    // process contrib-based reputation update
-    go g.processContribRepUpdate(pkt.RepUpdate, &A)
-  }
+	if pkt.RepContribUpdateReq {
+		// process contrib-based reputation update request
+		go g.processContribRepUpdateReq(&A)
+	}
+	if pkt.RepUpdate != nil {
+		// process contrib-based reputation update
+		go g.processContribRepUpdate(pkt.RepUpdate, &A)
+	}
 
 	return
 }

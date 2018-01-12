@@ -1,20 +1,18 @@
 package rep
 
 /*
-    Imports
+   Imports
 */
 
 import (
+	"strconv"
+	"sync"
 
-  "strconv"
-  "sync"
-
-  "github.com/No-Trust/peerster/common"
-
+	"github.com/No-Trust/peerster/common"
 )
 
 /*
-    Functions
+   Functions
 */
 
 /**
@@ -22,28 +20,28 @@ import (
  */
 func NewReputationTable(peerSet *common.PeerSet) *ReputationTable {
 
-  // Create a new empty reputation table
-  table := ReputationTable {
-    sigReps     : make(ReputationMap),
-    contribReps : make(ReputationMap),
-    mutex       : &sync.Mutex{},
-  }
+	// Create a new empty reputation table
+	table := ReputationTable{
+		sigReps:     make(ReputationMap),
+		contribReps: make(ReputationMap),
+		mutex:       &sync.Mutex{},
+	}
 
-  // Get a slice of the peers in the given peerset
-  peers := peerSet.ToPeerArray()
+	// Get a slice of the peers in the given peerset
+	peers := peerSet.ToPeerArray()
 
-  // Add each peer to the table with initial reputation
-  for _, peer := range peers {
+	// Add each peer to the table with initial reputation
+	for _, peer := range peers {
 
-    addr := peer.Address.IP.String() + ":" + strconv.Itoa(peer.Address.Port)
+		addr := peer.Address.IP.String() + ":" + strconv.Itoa(peer.Address.Port)
 
-    // table.sigReps[peer.Identifier]     = INIT_REP
-    table.contribReps[addr] = INIT_REP
+		// table.sigReps[peer.Identifier]     = INIT_REP
+		table.contribReps[addr] = INIT_REP
 
-  }
+	}
 
-  // Return the reputation table
-  return &table
+	// Return the reputation table
+	return &table
 
 }
 
@@ -53,21 +51,21 @@ func NewReputationTable(peerSet *common.PeerSet) *ReputationTable {
  */
 func findMinRepPeer(reps ReputationMap) string {
 
-  // Minimum reputation and corresponding peer
-  var min     float32 = MAX_REP
-  var minPeer string  = "" 
+	// Minimum reputation and corresponding peer
+	var min float32 = MAX_REP
+	var minPeer string = ""
 
-  // Loop through the entries
-  for peer, rep := range reps {
-    // If the current reputation is smaller than the
-    // minimum, update the peer with minimum reputation
-    if rep <= min {
-      minPeer = peer
-    }
-  }
+	// Loop through the entries
+	for peer, rep := range reps {
+		// If the current reputation is smaller than the
+		// minimum, update the peer with minimum reputation
+		if rep <= min {
+			minPeer = peer
+		}
+	}
 
-  // Return the peer
-  return minPeer
+	// Return the peer
+	return minPeer
 
 }
 
@@ -78,49 +76,49 @@ func findMinRepPeer(reps ReputationMap) string {
  */
 func highestReps(reps ReputationMap, n uint) ReputationMap {
 
-  // Make a new peer->rep map to hold the highest reputations
-  highestReps := make(ReputationMap)
+	// Make a new peer->rep map to hold the highest reputations
+	highestReps := make(ReputationMap)
 
-  // A pointer to the peer with the smallest reputation among
-  // the highest reputation peers at any given time.
-  // With this, when a new peer with a higher reputation than
-  // this one is found, all we need to do is remove this peer
-  // from the map, add the newly found peer, and update this
-  // pointer with the new "smallest highest" reputation peer.
-  var minPeer string = ""
+	// A pointer to the peer with the smallest reputation among
+	// the highest reputation peers at any given time.
+	// With this, when a new peer with a higher reputation than
+	// this one is found, all we need to do is remove this peer
+	// from the map, add the newly found peer, and update this
+	// pointer with the new "smallest highest" reputation peer.
+	var minPeer string = ""
 
-  // Loop through the entries
-  for peer, rep := range reps {
+	// Loop through the entries
+	for peer, rep := range reps {
 
-    // If the highest reputations map is
-    // not yet full, add this entry
-    if uint(len(highestReps)) < n {
+		// If the highest reputations map is
+		// not yet full, add this entry
+		if uint(len(highestReps)) < n {
 
-      highestReps[peer] = rep
+			highestReps[peer] = rep
 
-      // If the highest reputations map is full,
-      // find the smallest highest reputation
-      if uint(len(highestReps)) == n {
-        minPeer = findMinRepPeer(highestReps)
-      }
+			// If the highest reputations map is full,
+			// find the smallest highest reputation
+			if uint(len(highestReps)) == n {
+				minPeer = findMinRepPeer(highestReps)
+			}
 
-    // Otherwise, if this reputation is smaller than
-    // the smallest highest reputation, add the former
-    // and remove the latter
-    } else if rep > highestReps[minPeer] {
+			// Otherwise, if this reputation is smaller than
+			// the smallest highest reputation, add the former
+			// and remove the latter
+		} else if rep > highestReps[minPeer] {
 
-      delete(highestReps, minPeer)
-      highestReps[peer] = rep
+			delete(highestReps, minPeer)
+			highestReps[peer] = rep
 
-      // Update the smallest highest reputation
-      findMinRepPeer(highestReps)
+			// Update the smallest highest reputation
+			findMinRepPeer(highestReps)
 
-    }
+		}
 
-  }
+	}
 
-  // Return the highest reputations
-  return highestReps
+	// Return the highest reputations
+	return highestReps
 
 }
 
@@ -131,18 +129,18 @@ func highestReps(reps ReputationMap, n uint) ReputationMap {
  */
 func (table *ReputationTable) MostReputablePeers(n uint) *ReputationTable {
 
-  table.mutex.Lock()
+	table.mutex.Lock()
 
-  // Create the new table, populating its signature-based and
-  // contribution-based maps with the highest peers from this table
-  highestRepTable := &ReputationTable {
-    sigReps     : highestReps(table.sigReps    , n),
-    contribReps : highestReps(table.contribReps, n),
-  }
+	// Create the new table, populating its signature-based and
+	// contribution-based maps with the highest peers from this table
+	highestRepTable := &ReputationTable{
+		sigReps:     highestReps(table.sigReps, n),
+		contribReps: highestReps(table.contribReps, n),
+	}
 
-  table.mutex.Unlock()
+	table.mutex.Unlock()
 
-  // Return the new reputation table
-  return highestRepTable
+	// Return the new reputation table
+	return highestRepTable
 
 }

@@ -2,14 +2,12 @@
 package main
 
 import (
-	"sync"
 	"time"
 )
 
 // Implementation of the anti entropy algorithm.
 // Send a status packet every etimer seconds, to a random peer.
-func antiEntropy(g *Gossiper, etimer uint, wg sync.WaitGroup) {
-	defer wg.Done()
+func antiEntropy(g *Gossiper, etimer uint) {
 
 	ticker := time.NewTicker(time.Second * time.Duration(etimer)) // every rate sec
 	defer ticker.Stop()
@@ -21,7 +19,7 @@ func antiEntropy(g *Gossiper, etimer uint, wg sync.WaitGroup) {
 		if randPeer != "" {
 			// send status packet
 
-      addr := stringToUDPAddr(randPeer)
+			addr := stringToUDPAddr(randPeer)
 
 			status := g.vectorClock.Copy()
 			g.standardOutputQueue <- status.AntiEntropyString(&addr)

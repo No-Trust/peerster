@@ -231,7 +231,7 @@ func (ring *KeyRing) updateTrust(reptable rep.ReputationTable) {
 		if !present {
 			rep = 0.5
 		}
-		probability := ring.phi(name, 2 * rep)
+		probability := ring.phi(name, 2*rep)
 		ring.addNode(name, probability)
 	}
 }
@@ -374,7 +374,7 @@ func (ring *KeyRing) updatePending(reptable rep.ReputationTable) {
 		if !ok {
 			reputationOwner = 0.5
 		}
-		if ring.updateMessage(msg, 2 * reputationOwner) {
+		if ring.updateMessage(msg, 2*reputationOwner) {
 			toRemove.PushBack(e)
 		}
 	}
@@ -544,7 +544,7 @@ func (ring KeyRing) Dot() *[]byte {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
-	title := fmt.Sprintf("Key Ring -", time.Now().UTC().Format(time.RFC3339))
+	title := fmt.Sprintf("Key Ring - %v", time.Now().UTC().Format(time.RFC3339))
 
 	dot, err := dot.Marshal(&(ring.graph), title, "", "", false)
 	if err != nil {

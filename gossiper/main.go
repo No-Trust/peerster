@@ -31,13 +31,13 @@ func main() {
 	rtimer := flag.Uint("rtimer", 60, "timer duration for the sending of route rumors")
 	etimer := flag.Uint("etimer", 2, "timer duration for the sending of anti entropy status")
 	reptimer := flag.Uint("reptimer", rep.DEFAULT_REP_REQ_TIMER,
-	  "timer duration for reputation update requests")
+		"timer duration for reputation update requests")
 	noforward := flag.Bool("noforward", false, "for testing : forwarding of route rumors only")
 	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
 	keysdir := flag.String("keys", ".", "directory for boostrap public keys")
 	flag.Parse()
 
-	fmt.Println("given peers :", *peers, "\n")
+	fmt.Println("given peers :", *peers)
 
 	sipport := strings.Split(*gossipIPPort, ":")
 	if len(sipport) < 2 {
@@ -124,7 +124,7 @@ func parsePeers(args []string) []net.UDPAddr {
 		if ip == nil {
 			common.CheckRead(errors.New("ip address must be correct"))
 		}
-		var newPeer net.UDPAddr = net.UDPAddr{ip, port, ""}
+		var newPeer net.UDPAddr = net.UDPAddr{IP: ip, Port: port, Zone: ""}
 		peers = append(peers, newPeer)
 	}
 	return peers

@@ -1,13 +1,13 @@
 package rep
 
 /*
-    Imports
+   Imports
 */
 
 import "sync"
 
 /*
-    Type definitions
+   Type definitions
 */
 
 /**
@@ -32,6 +32,6 @@ type ReputationTable struct {
  * based and/or contribution-based reputations.
  */
 type RepUpdate struct {
-  SigReps     ReputationMap
-  ContribReps ReputationMap
+	SigReps     ReputationMap
+	ContribReps ReputationMap
 }

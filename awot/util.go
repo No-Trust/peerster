@@ -14,7 +14,7 @@ func serializeKey(key rsa.PublicKey) []byte {
 
 	PubASN1, err := x509.MarshalPKIXPublicKey(&key)
 	if err != nil {
-    log.Printf("erro : ", err)
+		log.Println("error : ", err)
 		log.Fatal("x509 MarshalPKIXPublicKey error")
 	}
 

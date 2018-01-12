@@ -16,7 +16,7 @@ func (g *Gossiper) processStatus(status *StatusPacket, remoteaddr *net.UDPAddr) 
 	g.standardOutputQueue <- g.peerSet.PeersListString()
 	g.standardOutputQueue <- status.StatusString(remoteaddr)
 
-	A := common.Peer{*remoteaddr, ""} // A is the relay peer
+	A := common.Peer{Address: *remoteaddr, Identifier: ""} // A is the relay peer
 
 	for _, peerstatus := range status.Want {
 		// loop over each peerstatus
@@ -114,9 +114,9 @@ func (g *Gossiper) compareStateAndProcess(rumor *RumorMessage, status *StatusPac
 			randPeer := g.reputationTable.ContribRandomPeer()
 
 			if randPeer != "" {
-				go g.rumormonger(rumor, &common.Peer {
-  			  Address : stringToUDPAddr(randPeer),
-  			})
+				go g.rumormonger(rumor, &common.Peer{
+					Address: stringToUDPAddr(randPeer),
+				})
 			}
 
 			return
@@ -125,7 +125,6 @@ func (g *Gossiper) compareStateAndProcess(rumor *RumorMessage, status *StatusPac
 			// stop
 			return
 		}
-		return
 	}
 
 	return

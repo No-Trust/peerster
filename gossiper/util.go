@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"sync"
 )
 
 func flipCoin() bool {
@@ -52,10 +51,9 @@ func AckString(addr net.UDPAddr, origin string, nextID uint32) string {
 }
 
 // Writer for gossiper packets : send every packet coming for a channel to the destination
-func writer(g *Gossiper, udpConn net.UDPConn, queue chan *Packet, wg sync.WaitGroup) {
+func writer(g *Gossiper, udpConn net.UDPConn, queue chan *Packet) {
 	// writing loop
 	// write every message on queue
-	defer wg.Done()
 	for pkt := range queue {
 		destination := pkt.Destination
 		gossipPacket := pkt.GossipPacket
@@ -68,10 +66,9 @@ func writer(g *Gossiper, udpConn net.UDPConn, queue chan *Packet, wg sync.WaitGr
 }
 
 // Writer for client packets : send every packet coming for a channel to the destination
-func clientwriter(udpConn net.UDPConn, queue chan *common.Packet, wg sync.WaitGroup) {
+func clientwriter(udpConn net.UDPConn, queue chan *common.Packet) {
 	// writing loop
 	// write every message on queue
-	defer wg.Done()
 	for pkt := range queue {
 		serverpkt := pkt.ClientPacket
 		destination := pkt.Destination
@@ -84,8 +81,7 @@ func clientwriter(udpConn net.UDPConn, queue chan *common.Packet, wg sync.WaitGr
 }
 
 // Listening Loop, calls handler when there is a new packet
-func listener(udpConn net.UDPConn, g *Gossiper, handler func([]byte, *net.UDPAddr, *Gossiper), wg sync.WaitGroup) {
-	defer wg.Done()
+func listener(udpConn net.UDPConn, g *Gossiper, handler func([]byte, *net.UDPAddr, *Gossiper)) {
 	defer udpConn.Close()
 
 	buf := make([]byte, 65535) // receiving byte array

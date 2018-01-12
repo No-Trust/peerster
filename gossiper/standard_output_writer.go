@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"sync"
 )
 
-func fmtwriter(queue chan *string, wg sync.WaitGroup) {
+func fmtwriter(queue chan *string) {
 	// writer for the standard output
 	// write every string on queue
-	defer wg.Done()
-
 	for str := range queue {
 		fmt.Println(*str)
 	}

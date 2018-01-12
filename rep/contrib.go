@@ -1,16 +1,16 @@
 package rep
 
 /*
-    Imports
+   Imports
 */
 
 import (
-  "math/rand"
-  "time"
+	"math/rand"
+	"time"
 )
 
 /*
-    Functions
+   Functions
 */
 
 /**
@@ -18,7 +18,7 @@ import (
  */
 func init() {
 
-  rand.Seed(time.Now().UTC().UnixNano())
+	rand.Seed(time.Now().UTC().UnixNano())
 
 }
 
@@ -28,30 +28,30 @@ func init() {
  */
 func (table *ReputationTable) InitContribRepForPeer(peer string) {
 
-  table.mutex.Lock()
+	table.mutex.Lock()
 
-  if _, ok := table.contribReps[peer] ; !ok {
-    table.contribReps[peer] = INIT_REP
-  }
+	if _, ok := table.contribReps[peer]; !ok {
+		table.contribReps[peer] = INIT_REP
+	}
 
-  table.mutex.Unlock()
+	table.mutex.Unlock()
 
 }
 
 /**
  * Returns the contribution-based reputation of the given peer.
  */
-func (table *ReputationTable) GetContribRep(peer string) (/*rep*/ float32, /*ok*/ bool) {
+func (table *ReputationTable) GetContribRep(peer string) ( /*rep*/ float32 /*ok*/, bool) {
 
-  table.mutex.Lock()
+	table.mutex.Lock()
 
-  // Get the reputation from the table
-  rep, ok := table.contribReps[peer]
+	// Get the reputation from the table
+	rep, ok := table.contribReps[peer]
 
-  table.mutex.Unlock()
+	table.mutex.Unlock()
 
-  // Return the reputation
-  return rep, ok
+	// Return the reputation
+	return rep, ok
 
 }
 
@@ -60,13 +60,13 @@ func (table *ReputationTable) GetContribRep(peer string) (/*rep*/ float32, /*ok*
  * reputation table. The operation is defined as a callback
  * function that takes a peer and a reputation as parameters.
  */
-func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ string, /*rep*/ float32)) {
+func (table *ReputationTable) ForEachContribRep(callback func( /*peer*/ string /*rep*/, float32)) {
 
-  // Loop through the entries
-  for peer, rep := range table.contribReps {
-    // Call the given callback for each (peer, rep) pair
-    callback(peer, rep)
-  }
+	// Loop through the entries
+	for peer, rep := range table.contribReps {
+		// Call the given callback for each (peer, rep) pair
+		callback(peer, rep)
+	}
 
 }
 
@@ -75,7 +75,7 @@ func (table *ReputationTable) ForEachContribRep(callback func(/*peer*/ string, /
  * given peer to which data was sent.
  */
 func (table *ReputationTable) DecreaseContribRep(peer string) {
-  table.updateContribRep(peer, false)
+	table.updateContribRep(peer, false)
 }
 
 /**
@@ -83,7 +83,7 @@ func (table *ReputationTable) DecreaseContribRep(peer string) {
  * given peer from which data was received.
  */
 func (table *ReputationTable) IncreaseContribRep(peer string) {
-  table.updateContribRep(peer, true)
+	table.updateContribRep(peer, true)
 }
 
 /**
@@ -95,57 +95,57 @@ func (table *ReputationTable) IncreaseContribRep(peer string) {
  */
 func (table *ReputationTable) updateContribRep(peer string, dataReceived bool) {
 
-  table.InitContribRepForPeer(peer)
+	table.InitContribRepForPeer(peer)
 
-  // The new value to use in the moving average formula
-  var newValue float32
+	// The new value to use in the moving average formula
+	var newValue float32
 
-  // If the data was received, set the new value to the maximum
-  // possible reputation value, otherwise set it to the minimum
-  if dataReceived {
-    newValue = MAX_REP
-  } else {
-    newValue = MIN_REP
-  }
+	// If the data was received, set the new value to the maximum
+	// possible reputation value, otherwise set it to the minimum
+	if dataReceived {
+		newValue = MAX_REP
+	} else {
+		newValue = MIN_REP
+	}
 
-  table.mutex.Lock()
+	table.mutex.Lock()
 
-  // Update the peer's reputation
-  table.contribReps[peer] = CONTRIB_ALPHA * newValue +
-    CONTRIB_ONE_MINUS_ALPHA * table.contribReps[peer]
+	// Update the peer's reputation
+	table.contribReps[peer] = CONTRIB_ALPHA*newValue +
+		CONTRIB_ONE_MINUS_ALPHA*table.contribReps[peer]
 
-  table.mutex.Unlock()
+	table.mutex.Unlock()
 
 }
 
 func (table *ReputationTable) ContribRandomPeer() string {
 
-  var randPeer string
+	var randPeer string
 
-  var total    float32 = 0
-  var counter  float32 = 0
+	var total float32 = 0
+	var counter float32 = 0
 
-  table.mutex.Lock()
+	table.mutex.Lock()
 
-  for _, rep := range table.contribReps {
-    total += rep
-  }
+	for _, rep := range table.contribReps {
+		total += rep
+	}
 
-  random := rand.Float32() * total
+	random := rand.Float32() * total
 
-  for peer, rep := range table.contribReps {
+	for peer, rep := range table.contribReps {
 
-    counter += rep
+		counter += rep
 
-    if random < counter {
-      randPeer = peer
-      break
-    }
+		if random < counter {
+			randPeer = peer
+			break
+		}
 
-  }
+	}
 
-  table.mutex.Unlock()
+	table.mutex.Unlock()
 
-  return randPeer
+	return randPeer
 
 }
