@@ -1,8 +1,8 @@
 package common
 
 import (
-	"fmt"
 	"encoding/hex"
+	"fmt"
 )
 
 func (msg *NewMessage) ClientNewMessageString() *string {
@@ -31,7 +31,6 @@ func (fm *FileRequest) GossiperAlreadyHasFileString() *string {
 	return &str
 
 }
-
 
 /***** Client Notification *****/
 

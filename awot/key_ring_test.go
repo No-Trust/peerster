@@ -1,8 +1,8 @@
 // Tests for the Automated Web of Trust
 package awot
 
-import (
-)
+import ()
+
 //
 // // creates a basic key ring and save it to disk
 // func TestKeyRingSave(t *testing.T) {

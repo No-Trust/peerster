@@ -1,8 +1,8 @@
 package common
 
 import (
-  "log"
-  "os"
+	"log"
+	"os"
 )
 
 func CheckError(err error) {

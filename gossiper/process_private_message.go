@@ -2,12 +2,12 @@
 package main
 
 import (
-	"github.com/No-Trust/peerster/common"
-	"net"
-	"log"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/rand"
+	"github.com/No-Trust/peerster/common"
+	"log"
+	"net"
 )
 
 // Handler for inbound Private Message
@@ -17,7 +17,6 @@ func (g *Gossiper) processPrivateMessage(pm *PrivateMessage, remoteaddr *net.UDP
 
 	if pm.Dest == g.Parameters.Identifier {
 		// this node is the destination
-
 
 		// decipher
 		secret := []byte(pm.Text)
@@ -29,44 +28,44 @@ func (g *Gossiper) processPrivateMessage(pm *PrivateMessage, remoteaddr *net.UDP
 		// printing
 		g.standardOutputQueue <- pm.PrivateMessageString(remoteaddr)
 
-    // If it is a request for a sig-based reputation
-    // update, create one and send it as a reply
-    if pm.RepSigUpdateReq {
+		// If it is a request for a sig-based reputation
+		// update, create one and send it as a reply
+		if pm.RepSigUpdateReq {
 
-      log := "SENDING SIG-REP UPDATE TO " + pm.Origin
-      g.standardOutputQueue <- &log
+			log := "SENDING SIG-REP UPDATE TO " + pm.Origin
+			g.standardOutputQueue <- &log
 
-      nextHop := g.routingTable.Get(pm.Origin)
+			nextHop := g.routingTable.Get(pm.Origin)
 
-      if nextHop != "" {
+			if nextHop != "" {
 
-        g.gossipOutputQueue <- &Packet {
-          GossipPacket : GossipPacket {
-            Private : &PrivateMessage {
-              RepUpdate : g.reputationTable.GetSigUpdate(),
-            },
-          },
-          Destination: stringToUDPAddr(nextHop),
-        }
-      }
+				g.gossipOutputQueue <- &Packet{
+					GossipPacket: GossipPacket{
+						Private: &PrivateMessage{
+							RepUpdate: g.reputationTable.GetSigUpdate(),
+						},
+					},
+					Destination: stringToUDPAddr(nextHop),
+				}
+			}
 
-      return
+			return
 
-    // Otherwise, if it is a sig-based reputation update,
-    // forward it to reputation system instead of client
-    } else if pm.RepUpdate != nil {
+			// Otherwise, if it is a sig-based reputation update,
+			// forward it to reputation system instead of client
+		} else if pm.RepUpdate != nil {
 
-      log := "RECEIVED SIG-REP UPDATE FROM " + pm.Origin + "\nPRINTING OLD REPS AND NEW REPS"
-      g.standardOutputQueue <- &log
-      g.reputationTable.Log()
+			log := "RECEIVED SIG-REP UPDATE FROM " + pm.Origin + "\nPRINTING OLD REPS AND NEW REPS"
+			g.standardOutputQueue <- &log
+			g.reputationTable.Log()
 
-      g.reputationTable.UpdateReputations(pm.RepUpdate, pm.Origin)
+			g.reputationTable.UpdateReputations(pm.RepUpdate, pm.Origin)
 
-      g.reputationTable.Log()
+			g.reputationTable.Log()
 
-      return
+			return
 
-    }
+		}
 
 		// send the message to the client, if it exists
 		if g.ClientAddress != nil {

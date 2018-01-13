@@ -2,15 +2,15 @@
 package main
 
 import (
-	"crypto/rsa"
-	"crypto/sha256"
 	"crypto"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"github.com/No-Trust/peerster/common"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
-	"log"
 	"path/filepath"
 )
 
@@ -139,8 +139,8 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 	if *(req) == true {
 
 		// Update Request
-		cpy := g.peerSet.ToPeerSlice() // copy of the peerset
-		ids := g.routingTable.GetIds() // ids of peer with known route
+		cpy := g.peerSet.ToPeerSlice()  // copy of the peerset
+		ids := g.routingTable.GetIds()  // ids of peer with known route
 		keys := g.keyRing.GetPeerList() // ids of peers with known public key
 		// nasty intersection TODO
 		rNodes := make([]string, 0)
@@ -148,7 +148,7 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 			for _, p2 := range keys {
 				if p1 == p2 {
 					rNodes = append(rNodes, p2)
-					break;
+					break
 				}
 			}
 		}
@@ -158,13 +158,13 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 			graph = nil
 		}
 
-    // Get reputation update
-    repUpdate := g.reputationTable.GetUpdate()
+		// Get reputation update
+		repUpdate := g.reputationTable.GetUpdate()
 
-    update := common.RepUpdate {
-      SigReps     : common.ReputationMap(repUpdate.SigReps),
-      ContribReps : common.ReputationMap(repUpdate.ContribReps),
-    }
+		update := common.RepUpdate{
+			SigReps:     common.ReputationMap(repUpdate.SigReps),
+			ContribReps: common.ReputationMap(repUpdate.ContribReps),
+		}
 
 		// sending
 		g.clientOutputQueue <- &common.Packet{

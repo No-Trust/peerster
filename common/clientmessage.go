@@ -63,6 +63,6 @@ type ReputationMap map[string]float32
  * based and contribution-based reputations.
  */
 type RepUpdate struct {
-  SigReps     ReputationMap
-  ContribReps ReputationMap
+	SigReps     ReputationMap
+	ContribReps ReputationMap
 }

@@ -15,8 +15,8 @@ type PeerSlice struct {
 // PeerSet, a set of peers
 // Thread Safe
 type PeerSet struct {
-	peers []Peer
-	mutex *sync.Mutex
+	peers  []Peer
+	mutex  *sync.Mutex
 	except net.UDPAddr // address to exclude : own's address
 }
 
@@ -96,8 +96,8 @@ func (ps PeerSet) ToPeerSlice() PeerSlice {
 
 func NewSet(except net.UDPAddr) PeerSet {
 	return PeerSet{
-		peers: make([]Peer, 0),
-		mutex: &sync.Mutex{},
+		peers:  make([]Peer, 0),
+		mutex:  &sync.Mutex{},
 		except: except,
 	}
 }

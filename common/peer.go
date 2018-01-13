@@ -2,8 +2,8 @@
 package common
 
 import (
-  "net"
-  "fmt"
+	"fmt"
+	"net"
 )
 
 // A gossiper Peer

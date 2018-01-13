@@ -69,8 +69,8 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 
 		// this is the 'expected' message
 
-    // Increase contribution-based reputation of sender
-    g.reputationTable.IncreaseContribRep(addrToString(*remoteaddr))
+		// Increase contribution-based reputation of sender
+		g.reputationTable.IncreaseContribRep(addrToString(*remoteaddr))
 
 		// update next hop routing table, unconditionnaly because this is a new rumor
 		g.routingTable.AddNextHop(rumor.Origin, remoteaddr)

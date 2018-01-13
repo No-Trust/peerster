@@ -11,7 +11,7 @@ type FileMetadata struct {
 	Size      uint
 	Metafile  []byte
 	Metahash  []byte
-	Origin		string
+	Origin    string
 	SigOrigin *[]byte
 }
 

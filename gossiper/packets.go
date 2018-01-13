@@ -50,15 +50,15 @@ type StatusPacket struct {
 /***** Private Message *****/
 
 type PrivateMessage struct {
-	Origin          string
-	ID              uint32
-	Text            string
-	Dest            string
-	HopLimit        uint32
-  // Added for Signature-based
-  // Reputation Updates
-  RepSigUpdateReq bool
-  RepUpdate       *rep.RepUpdate
+	Origin   string
+	ID       uint32
+	Text     string
+	Dest     string
+	HopLimit uint32
+	// Added for Signature-based
+	// Reputation Updates
+	RepSigUpdateReq bool
+	RepUpdate       *rep.RepUpdate
 }
 
 /***** Data Request & Reply *****/

@@ -41,9 +41,9 @@ func (table *KeyTable) remove(owner string) {
 // Create a new KeyTable with own's key
 func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
 	table := newKeyTable()
-	table.add(TrustedKeyRecord {
-		Record: KeyRecord {
-			Owner: owner,
+	table.add(TrustedKeyRecord{
+		Record: KeyRecord{
+			Owner:  owner,
 			KeyPub: key,
 		},
 		Confidence: 1.0, // confidence 100%
@@ -73,9 +73,9 @@ func (table *KeyTable) updateConfidence(name string, confidence float32, key *rs
 		r.Confidence = confidence
 		table.db[name] = r
 	} else if key != nil {
-		table.db[name] = TrustedKeyRecord {
-			Record: KeyRecord {
-				Owner: name,
+		table.db[name] = TrustedKeyRecord{
+			Record: KeyRecord{
+				Owner:  name,
 				KeyPub: *key,
 			},
 			Confidence: confidence,

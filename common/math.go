@@ -5,19 +5,19 @@ package common
  */
 func ClampFloat32(value, min, max float32) float32 {
 
-  if (value < min) {
+	if value < min {
 
-    return min
+		return min
 
-  } else if (value > max) {
+	} else if value > max {
 
-    return max
+		return max
 
-  } else {
+	} else {
 
-    return value
+		return value
 
-  }
+	}
 
 }
 
@@ -26,18 +26,18 @@ func ClampFloat32(value, min, max float32) float32 {
  */
 func AbsFloat32(x float32) float32 {
 
-  if x < 0 {
+	if x < 0 {
 
-    return -x
+		return -x
 
-  } else if x == 0 {
+	} else if x == 0 {
 
-    return 0
+		return 0
 
-  } else {
+	} else {
 
-    return x
+		return x
 
-  }
+	}
 
 }

@@ -19,8 +19,8 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 		Destination: destPeer.Address,
 	}
 
-  // Decrease contribution-based reputation of receiver
-  g.reputationTable.DecreaseContribRep(addrToString(destPeer.Address))
+	// Decrease contribution-based reputation of receiver
+	g.reputationTable.DecreaseContribRep(addrToString(destPeer.Address))
 
 	// and wait for status message
 	statusChannel := make(chan *PeerStatus)
@@ -61,11 +61,11 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			delete(g.gossiperWaiters, ackID)
 			g.waitersMutex.Unlock()
 
-      randPeer := g.reputationTable.ContribRandomPeer()
+			randPeer := g.reputationTable.ContribRandomPeer()
 
 			if randPeer != "" {
-				go g.rumormonger(rumor, &common.Peer {
-				  Address : stringToUDPAddr(randPeer),
+				go g.rumormonger(rumor, &common.Peer{
+					Address: stringToUDPAddr(randPeer),
 				})
 			}
 
@@ -84,11 +84,11 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			if flipCoin() {
 				g.standardOutputQueue <- CoinFlipString(&destPeer.Address)
 
-        randPeer := g.reputationTable.ContribRandomPeer()
+				randPeer := g.reputationTable.ContribRandomPeer()
 
 				if randPeer != "" {
-					go g.rumormonger(rumor, &common.Peer {
-					  Address : stringToUDPAddr(randPeer),
+					go g.rumormonger(rumor, &common.Peer{
+						Address: stringToUDPAddr(randPeer),
 					})
 				}
 

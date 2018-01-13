@@ -1,9 +1,9 @@
 package main
 
 import (
-  "net"
-  "github.com/dedis/protobuf"
-  "github.com/No-Trust/peerster/common"
+	"github.com/No-Trust/peerster/common"
+	"github.com/dedis/protobuf"
+	"net"
 )
 
 // Listening Loop, calls handler when there is a new packet
@@ -14,22 +14,22 @@ func listener(udpConn net.UDPConn, handler func([]byte, *net.UDPAddr)) {
 
 	// Listening loop
 	for {
-  	n, remoteaddr, err := udpConn.ReadFromUDP(buf)
+		n, remoteaddr, err := udpConn.ReadFromUDP(buf)
 		common.CheckError(err)
 		//go handler(buf[:n], remoteaddr, g)
-    handler(buf[:n], remoteaddr)
+		handler(buf[:n], remoteaddr)
 	}
 }
 
 func writer(udpConn net.UDPConn, queue chan *common.ClientPacket, destination *net.UDPAddr) {
 	// writing loop
 	// write every message on queue
-  defer udpConn.Close()
+	defer udpConn.Close()
 	for pkt := range queue {
 
 		buf, err := protobuf.Encode(pkt)
 		common.CheckError(err)
 		_, err = udpConn.WriteToUDP(buf, destination)
-    common.CheckError(err)
+		common.CheckError(err)
 	}
 }

@@ -2,9 +2,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/No-Trust/peerster/awot"
 	"net"
-	"fmt"
 )
 
 // Procedure for inbound KeyExchangeMessage
@@ -49,16 +49,16 @@ func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, repOw
 		//	- error in network layers below (rare)
 		//	- malicious sender : either true sender, or MITM
 
-    // Decrease sender's reputation
-    // g.reputationTable.DecreaseSigRep(/* OOPS! WE NEED SENDER'S IDENTIFIER */, record.Confidence)
+		// Decrease sender's reputation
+		// g.reputationTable.DecreaseSigRep(/* OOPS! WE NEED SENDER'S IDENTIFIER */, record.Confidence)
 
 		return
 	}
 
 	// the signature is valid
 
-  // Increase sender's reputation
-  // g.reputationTable.IncreaseSigRep(/* OOPS! WE NEED SENDER'S IDENTIFIER */, record.Confidence)
+	// Increase sender's reputation
+	// g.reputationTable.IncreaseSigRep(/* OOPS! WE NEED SENDER'S IDENTIFIER */, record.Confidence)
 
 	// update key ring
 	g.keyRing.Add(record, msg.Origin, repOwner)

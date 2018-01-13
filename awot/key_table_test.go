@@ -20,7 +20,7 @@ func TestSigningExchangeMessage(t *testing.T) {
 			Owner:  "node1",
 			KeyPub: r1K.PublicKey,
 		},
-		Confidence:         1.0,
+		Confidence: 1.0,
 	}
 
 	table.add(r1)
