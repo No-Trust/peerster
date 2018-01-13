@@ -1,4 +1,7 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/No-Trust/peerster)](https://goreportcard.com/report/github.com/No-Trust/peerster)
+[![Build Status](https://travis-ci.org/No-Trust/peerster.svg?branch=master)](https://travis-ci.org/No-Trust/peerster)
 # Peerster No-Trust
+
 
 ## Presentation
 
