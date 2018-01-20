@@ -4,21 +4,20 @@ import (
 	"gonum.org/v1/gonum/graph"
 )
 
-type Path []graph.Node
+type Path = []graph.Node
 
-func (p Path) toNodeArray() []graph.Node {
-	return []graph.Node(p)
-}
-func toPathArray(paths []Path) [][]graph.Node {
-	r := make([][]graph.Node, len(paths))
-	for i, p := range paths {
-		r[i] = p.toNodeArray()
-	}
-	return r
-}
-
-// Return all the intersections of any t paths in given paths
+// comb returns all the intersections of any t paths in given paths
 func comb(paths []Path, t int) []Path {
+	c := combHelper(paths, t)
+
+	if len(c) == 1 && len(c[0]) == 0 {
+		return nil
+	}
+	return c
+}
+
+// combHelper is a helper for comb
+func combHelper(paths []Path, t int) []Path {
 	if t == 0 {
 		return []Path{Path{}}
 	}
@@ -26,15 +25,15 @@ func comb(paths []Path, t int) []Path {
 		return []Path{Path{}}
 	}
 	if len(paths) == t {
-		return []Path{intersection(toPathArray(paths))}
+		return []Path{intersection(paths)}
 	}
 
-	with := comb(paths[1:], t-1)
+	with := combHelper(paths[1:], t-1)
 	for i, _ := range with {
 		with[i] = intersection([][]graph.Node{paths[0], with[i]})
 	}
 
-	without := comb(paths[1:], t)
+	without := combHelper(paths[1:], t)
 	return append(with, without...)
 }
 
