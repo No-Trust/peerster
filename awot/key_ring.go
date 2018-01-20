@@ -6,26 +6,28 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/No-Trust/peerster/rep"
-	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/encoding/dot"
-	"gonum.org/v1/gonum/graph/path"
-	"gonum.org/v1/gonum/graph/simple"
 	"io/ioutil"
 	"log"
 	"math"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/No-Trust/peerster/rep"
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/encoding/dot"
+	"gonum.org/v1/gonum/graph/path"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
-// A Node in the key ring
+// A Node is a node in the key ring, representing a peer in the network
 type Node struct {
 	name        string
 	id          int64
 	probability *float32
 }
 
+// An Edge is a directed edge F->T in the key ring, representing that F signed the key for T
 type Edge struct {
 	F, T Node
 	Key  rsa.PublicKey
@@ -37,17 +39,19 @@ func (e Edge) From() graph.Node { return e.F }
 // To returns the to-node of the edge.
 func (e Edge) To() graph.Node { return e.T }
 
+// ID returns the integer ID of a node
 func (n Node) ID() int64 {
 	return int64(n.id)
 }
 
+// DOTID returns a string representing the current state of a node
 func (n Node) DOTID() string {
 	p := *n.probability
 	percent := int(p * 100)
 	return fmt.Sprintf("%s_%d", n.name, percent)
 }
 
-// Key Ring implementation
+// A KeyRing is a directed graph of Node and Edge
 type KeyRing struct {
 	source       string
 	ids          map[string]*Node // name -> Node
@@ -61,30 +65,30 @@ type KeyRing struct {
 
 ////////// Key Ring API
 
-// Return the key of peer with given name and true if it exists, otherwise return false
+// GetKey returns the key of peer with given name and true if it exists, otherwise returns false
 func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
 	return ring.keyTable.getKey(name)
 }
 
-// Return the record of peer with given name and true if it exists, otherwise return false
+// GetRecord returns the record of peer with given name and true if it exists, otherwise returns false
 func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
 	return ring.keyTable.get(name)
 }
 
-// GetPeerList returns the list of peer name the keyring has a public key for
+// GetPeerList returns the list of peer names the keyring has a public key for
 func (ring KeyRing) GetPeerList() []string {
 	return ring.keyTable.getPeerList()
 }
 
-// Add an exchange message that could not be verified (lack of signer's key)
+// AddUnverified adds a KeyExchangeMessage that could not yet be verified (e.g. lack of signer's key)
 func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 	ring.pending.PushBack(msg)
 }
 
-// Update the key ring with the given key and origin of the signature
-// Assumes that the signature is correct
+// Add updates the key ring with the given (verified) keyrecord and origin of the signature
+// It assumes that the record's signature has been verified
 func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float32) {
 	// do not update if the signer is unknown
 	if !ring.contains(sigOrigin) {
@@ -122,8 +126,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float3
 	ring.updateConfidence()
 }
 
-// Create a new key-ring with given fully trusted origin-public key pairs
-// The key ring will update the keytable when needed
+// NewKeyRing creates a new key-ring given some fully trusted (origin-public key) pairs and a pointer to a reputation table
 // Creating a Key Ring will also spawn a new goroutine for updating the key ring regularly
 func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord, reptable *rep.ReputationTable) KeyRing {
 
@@ -210,24 +213,29 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 
 ////////// Key Ring Implementation
 
+// worker performs periodic updates on a keyring
 func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
 	// updating the ring with yet unverified pending messages
 	go func() {
 		ticker := time.NewTicker(time.Second * time.Duration(5)) // every 5 sec
 		defer ticker.Stop()
 		for _ = range ticker.C {
-			ring.updateTrust(*reptable)
-			ring.updatePending(*reptable)
+			ring.updateTrust(reptable)
+			ring.updatePending(reptable)
 			ring.updateConfidence()
-			//ring.Save("ring")
 		}
 	}()
 }
 
-func (ring *KeyRing) updateTrust(reptable rep.ReputationTable) {
+// updateTrust recomputes the trust associated with each node to account for reputation updates or ring updates
+func (ring *KeyRing) updateTrust(reptable *rep.ReputationTable) {
 
 	for name, _ := range ring.ids {
-		rep, present := reptable.GetSigRep(name)
+		present := false
+		rep := float32(0.5)
+		if reptable != nil {
+			rep, present = reptable.GetSigRep(name)
+		}
 		if !present {
 			rep = 0.5
 		}
@@ -236,7 +244,7 @@ func (ring *KeyRing) updateTrust(reptable rep.ReputationTable) {
 	}
 }
 
-// Update the key table : computes new confidence levels for each key
+// updateConfidence updates the key table by computing new confidence levels for each key
 func (ring *KeyRing) updateConfidence() {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -257,9 +265,9 @@ func (ring *KeyRing) updateConfidence() {
 	}
 }
 
-// selectBestPaths takes some paths and return a subset of them wich all corresponds to the same end public key
+// selectBestPaths takes a set of paths and returns the biggest subset in wich all paths corresponds to the same end public key
 // the key chosen is the one corresponding to the maximum number of paths
-// Warning : thread unsafe
+// thread unsafe
 func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.PublicKey) {
 	if len(paths) == 0 {
 		return paths, nil
@@ -333,7 +341,7 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.
 	return bestPaths, &bestKey
 }
 
-// update key ring with given message, if update successful return true
+// updateMessage updates a KeyRing with given message, if update successful return true
 // an update is successful if the update was performed or enough information is known to declare the message not correct / trustworthy
 func (ring *KeyRing) updateMessage(msg KeyExchangeMessage, confidenceOwner float32) bool {
 	receivedKey, err := DeserializeKey(msg.KeyBytes)
@@ -361,8 +369,8 @@ func (ring *KeyRing) updateMessage(msg KeyExchangeMessage, confidenceOwner float
 	return false
 }
 
-// Loop over the stored unverified messages and process them
-func (ring *KeyRing) updatePending(reptable rep.ReputationTable) {
+// updatePending tries to update the KeyRing with old pending messages
+func (ring *KeyRing) updatePending(reptable *rep.ReputationTable) {
 	ring.pendingMutex.Lock()
 	defer ring.pendingMutex.Unlock()
 
@@ -370,7 +378,11 @@ func (ring *KeyRing) updatePending(reptable rep.ReputationTable) {
 	for e := ring.pending.Front(); e != nil; e = e.Next() {
 
 		msg := e.Value.(KeyExchangeMessage)
-		reputationOwner, ok := reptable.GetSigRep(msg.Owner)
+		ok := false
+		reputationOwner := float32(0.5)
+		if reptable != nil {
+			reputationOwner, ok = reptable.GetSigRep(msg.Owner)
+		}
 		if !ok {
 			reputationOwner = 0.5
 		}
@@ -384,7 +396,8 @@ func (ring *KeyRing) updatePending(reptable rep.ReputationTable) {
 	}
 }
 
-// Compute the probability of the node, independently of its current probability
+// phi computes the probability of the node, independently of its current probability
+// the probability is the trust put in a node for advertising public keys
 func (ring KeyRing) phi(name string, reputation float32) float32 {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -406,8 +419,7 @@ func (ring KeyRing) phi(name string, reputation float32) float32 {
 	return float32(phi)
 }
 
-// Check if the node with given name exists in the key ring
-// It does not check if it exists in the key table
+// contains checks if a node with given name exists in the key ring
 func (ring KeyRing) contains(name string) bool {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -415,7 +427,7 @@ func (ring KeyRing) contains(name string) bool {
 	return present
 }
 
-// Return the id of the noden with highest id
+// lastNode returns the id of the node with highest id
 func (ring KeyRing) lastNode() int64 {
 	maxId := int64(0)
 	nodes := ring.graph.Nodes()
@@ -427,8 +439,7 @@ func (ring KeyRing) lastNode() int64 {
 	return maxId
 }
 
-// Add a Vertex to the Keyring with given name and probability
-// If the Vertex already exists, update its probability
+// addNode adds a Vertex to the KeyRing with given name and probability, or updates the node with given probability if it exists
 func (ring *KeyRing) addNode(name string, probability float32) {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -453,7 +464,7 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	return
 }
 
-// Add a directed edge from a to b
+// addEdge adds a directed edge from node named a to node named b, given the public key associated with the signature from a of b's key
 func (ring *KeyRing) addEdge(a, b string, key rsa.PublicKey) error {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -498,6 +509,7 @@ type GraphViz struct {
 	Links []EdgeViz
 }
 
+// graphViz returns a representation of the KeyRing in GraphViz structure
 func (ring KeyRing) graphViz() GraphViz {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -533,13 +545,13 @@ func (ring KeyRing) graphViz() GraphViz {
 	}
 }
 
-// Marshals a keyring to a json format {nodes: ..., edges: a->b}
+// JSON Marshals a KeyRing to a json format {nodes: ..., edges: a->b}
 func (ring KeyRing) JSON() ([]byte, error) {
 	gviz := ring.graphViz()
 	return json.Marshal(gviz)
 }
 
-// Marshals a keyring to a dot format, or nil if error
+// Dot marshals a keyring to a dot format, or nil if error
 func (ring KeyRing) Dot() *[]byte {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -553,8 +565,8 @@ func (ring KeyRing) Dot() *[]byte {
 	return &dot
 }
 
-// Marshal the graph and write to file in dot format
-func (ring KeyRing) Save(filename string) error {
+// SaveAsDot marshals the graph and writes to file in dot format
+func (ring KeyRing) SaveAsDot(filename string) error {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 	path, err := filepath.Abs(filename)

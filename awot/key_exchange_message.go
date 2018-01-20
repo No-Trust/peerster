@@ -6,9 +6,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+
 	"github.com/No-Trust/peerster/common"
 )
 
+// A KeyExchangeMessage is a signed relation (publickey - owner)
 type KeyExchangeMessage struct {
 	KeyBytes  []byte // serialized public key
 	Owner     string // owner of the public key
@@ -16,8 +18,8 @@ type KeyExchangeMessage struct {
 	Signature []byte // signature of (keyPub <-> owner)
 }
 
-// Verifies that the received message is signed by the pretended origin
-// Return nil if valid, an error otherwise
+// Verify verifies that the received message is signed by the pretended origin
+// Returns nil if valid, an error otherwise
 func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
 	data := append(msg.KeyBytes, []byte(msg.Owner)...)
 	newhash := sha256.New()
@@ -28,8 +30,7 @@ func Verify(msg KeyExchangeMessage, OriginKeyPub rsa.PublicKey) error {
 	return rsa.VerifyPSS(&OriginKeyPub, crypto.SHA256, hashed, msg.Signature, nil) //&opts)
 }
 
-// Create a KeyExchangeMessage by signing the public key record, using given private key and attach own's name to the signature
-// Return the new KeyExchangeMessage
+// create creates a KeyExchangeMessage by signing the public key record using given private key and attaching given origin name to the signature
 func create(keybytes []byte, owner string, ownPrivateKey rsa.PrivateKey, origin string) KeyExchangeMessage {
 
 	data := append(keybytes, []byte(owner)...)

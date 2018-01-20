@@ -26,7 +26,7 @@ func TestSigningExchangeMessage(t *testing.T) {
 	table.add(r1)
 	rec1, _ := table.get("node1")
 
-	table.getTrustedKeys(*r1K, "mynode")
+	table.getFullyTrustedKeys(*r1K, "mynode")
 
 	if rec1.keyExchangeMessage != nil {
 		t.Errorf("getTrustedKeys returns a pointer")

@@ -1,7 +1,5 @@
-// Tests for the Automated Web of Trust
+// Tests for the Key Ring
 package awot
-
-import ()
 
 //
 // // creates a basic key ring and save it to disk

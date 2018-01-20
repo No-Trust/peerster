@@ -1,4 +1,4 @@
-// Tests for the Automated Web of Trust
+// Tests for key exchange messages methods
 package awot
 
 import (
@@ -6,29 +6,6 @@ import (
 	"crypto/rsa"
 	"testing"
 )
-
-func BenchmarkSigning(t *testing.B) {
-	keyA, err := rsa.GenerateKey(rand.Reader, 4096)
-
-	if err != nil {
-		t.Errorf("Could not create private key")
-	}
-
-	keyB, err := rsa.GenerateKey(rand.Reader, 4096)
-
-	if err != nil {
-		t.Errorf("Could not create private key")
-	}
-
-	record := KeyRecord{
-		Owner:  "peerB",
-		KeyPub: keyB.PublicKey,
-	}
-
-	for i := 0; i < t.N; i++ {
-		create(record, *keyA, "peerA")
-	}
-}
 
 // Generates key for A and B
 // Create KeyExchangeMessage by A singing B's public key
@@ -40,13 +17,13 @@ func TestKeyExchangeSigning(t *testing.T) {
 	// generate A's key
 	keyA, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		t.Errorf("Could not create private key")
+		t.Errorf("Could not create private key: %v", err)
 	}
 
 	// generate B's key
 	keyB, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		t.Errorf("Could not create private key")
+		t.Errorf("Could not create private key: %v", err)
 	}
 
 	recordForB := KeyRecord{
@@ -55,13 +32,19 @@ func TestKeyExchangeSigning(t *testing.T) {
 	}
 
 	// A signs B's key
-	msg := create(recordForB, *keyA, A)
+	keyBBytes, err := SerializeKey(recordForB.KeyPub)
+
+	if err != nil {
+		t.Errorf("Could not serialize the key: %v", err)
+	}
+
+	msg := create(keyBBytes, recordForB.Owner, *keyA, A)
 
 	// check that the signature is correct
 	err = Verify(msg, keyA.PublicKey)
 
 	if err != nil {
-		t.Errorf("Signature of message is wrong")
+		t.Errorf("Signature of message is wrong: %v", err)
 	}
 
 	trustedRecordForB := TrustedKeyRecord{
@@ -69,11 +52,11 @@ func TestKeyExchangeSigning(t *testing.T) {
 		Confidence: 1.0,
 	}
 
-	msg = trustedRecordForB.GetMessage(*keyA, A)
+	msg = trustedRecordForB.ConstructMessage(*keyA, A)
 
 	err = Verify(msg, keyA.PublicKey)
 
 	if err != nil {
-		t.Errorf("Signature of message is wrong")
+		t.Errorf("Signature of message is wrong: %v", err)
 	}
 }

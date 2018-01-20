@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// A key database, a set of TrustedKeyRecord
+// A KeyTable is a public key database, a set of TrustedKeyRecord
 type KeyTable struct {
 	db    map[string]TrustedKeyRecord // owner name -> record
 	mutex *sync.Mutex
@@ -24,21 +24,29 @@ func (table KeyTable) getPeerList() []string {
 	return peers
 }
 
-// Add a record to the key table, overwrites it if it already exists
+// add adds a record to the key table, overwrites it if it already exists
 func (table *KeyTable) add(rec TrustedKeyRecord) {
 	table.mutex.Lock()
 	table.db[rec.Record.Owner] = rec
 	table.mutex.Unlock()
 }
 
-// Remove a record for given key owner
+// remove removes a record for given key owner
 func (table *KeyTable) remove(owner string) {
 	table.mutex.Lock()
 	delete(table.db, owner)
 	table.mutex.Unlock()
 }
 
-// Create a new KeyTable with own's key
+// newKeyTable creates an empty KeyTable
+func newKeyTable() KeyTable {
+	return KeyTable{
+		db:    make(map[string]TrustedKeyRecord),
+		mutex: &sync.Mutex{},
+	}
+}
+
+// NewKeyTable creates a new KeyTable with own's key
 func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
 	table := newKeyTable()
 	table.add(TrustedKeyRecord{
@@ -52,7 +60,7 @@ func NewKeyTable(owner string, key rsa.PublicKey) KeyTable {
 	return table
 }
 
-// Return the record of peer with given name and true if it exists, otherwise return false
+// get returns the record of peer with given name and true if it exists, otherwise return false
 func (table KeyTable) get(name string) (TrustedKeyRecord, bool) {
 	table.mutex.Lock()
 	r, present := table.db[name]
@@ -60,7 +68,7 @@ func (table KeyTable) get(name string) (TrustedKeyRecord, bool) {
 	return r, present
 }
 
-// Update the confidence of association key - peer, with peer's name given
+// updateConfidence updates the confidence of the association key - peer, with peer's name given
 // If the association does not exist yet, do nothing if the key is not present
 // If a key is given, overwrites present key
 func (table *KeyTable) updateConfidence(name string, confidence float32, key *rsa.PublicKey) {
@@ -84,23 +92,15 @@ func (table *KeyTable) updateConfidence(name string, confidence float32, key *rs
 	table.mutex.Unlock()
 }
 
-// Return the key of peer with given name and true if it exists, otherwise return false
+// getKey returns the key of peer with given name and true if it exists, otherwise return false
 func (table KeyTable) getKey(name string) (rsa.PublicKey, bool) {
 	rec, present := table.get(name)
 	return rec.Record.KeyPub, present
 }
 
-// Create an empty KeyTable
-func newKeyTable() KeyTable {
-	return KeyTable{
-		db:    make(map[string]TrustedKeyRecord),
-		mutex: &sync.Mutex{},
-	}
-}
-
-// Retrieve the keys with a confidence level of 100%
+// getFullyTrustedKeys retrieves the keys with a confidence level of 100%
 // If not yet signed, sign the keys
-func (table *KeyTable) getTrustedKeys(priK rsa.PrivateKey, origin string) []TrustedKeyRecord {
+func (table *KeyTable) getFullyTrustedKeys(priK rsa.PrivateKey, origin string) []TrustedKeyRecord {
 	r := make([]TrustedKeyRecord, 0)
 	table.mutex.Lock()
 

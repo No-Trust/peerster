@@ -6,16 +6,15 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+
 	"github.com/No-Trust/peerster/common"
-	"log"
 )
 
-func serializeKey(key rsa.PublicKey) []byte {
-
+// SerializeKey encodes the given public key to a x509 format and serializes it to a pem format
+func SerializeKey(key rsa.PublicKey) ([]byte, error) {
 	PubASN1, err := x509.MarshalPKIXPublicKey(&key)
 	if err != nil {
-		log.Println("error : ", err)
-		log.Fatal("x509 MarshalPKIXPublicKey error")
+		return nil, fmt.Errorf("could not marshal public key to x509: %v", err)
 	}
 
 	data := pem.EncodeToMemory(&pem.Block{
@@ -23,10 +22,10 @@ func serializeKey(key rsa.PublicKey) []byte {
 		Bytes: PubASN1,
 	})
 
-	return data
+	return data, nil
 }
 
-// deserialize public key
+// DeserializeKey deserializes a pem encoded x509 public key
 func DeserializeKey(bytes []byte) (rsa.PublicKey, error) {
 	pemBlock, _ := pem.Decode(bytes)
 	if pemBlock == nil {
