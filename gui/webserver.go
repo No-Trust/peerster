@@ -115,7 +115,7 @@ func requester() {
 	ticker := time.NewTicker(time.Millisecond * 1000)
 	defer ticker.Stop()
 
-	for _ = range ticker.C {
+	for range ticker.C {
 		// send request
 		var t bool = true
 		outputQueue <- &common.ClientPacket{

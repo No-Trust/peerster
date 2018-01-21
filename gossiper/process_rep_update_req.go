@@ -20,7 +20,7 @@ func repUpdateRequests(g *Gossiper, reptimer uint) {
 	ticker := time.NewTicker(time.Second * time.Duration(reptimer))
 	defer ticker.Stop()
 
-	for _ = range ticker.C {
+	for range ticker.C {
 
 		log := "Sending reputation update requests to most reputable peers..."
 
@@ -67,7 +67,7 @@ func repLogs(g *Gossiper) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
-	for _ = range ticker.C {
+	for range ticker.C {
 		g.reputationTable.Log()
 	}
 

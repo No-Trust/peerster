@@ -1,10 +1,13 @@
 language: go
 
-before_install:
-  - go get -t -v ./...
+go:
+  - 1.9
+  - master
+
+install:
+  - go get -t ./...
 
 script:
-  - go get -t -v ./...
-  - diff -u <(echo -n) <(gofmt -d .)
+  - bash .travis.gofmt.sh
   - go tool vet .
   - go test -v -race ./...

@@ -87,38 +87,37 @@ func TestComb(t *testing.T) {
 			[]Path{
 				[]graph.Node{ns[0], ns[1], ns[2]},
 				[]graph.Node{ns[2], ns[3], ns[4]},
-        []graph.Node{ns[4], ns[5], ns[6]},
+				[]graph.Node{ns[4], ns[5], ns[6]},
 			},
 			2,
 			[]Path{
 				[]graph.Node{ns[0], ns[1], ns[2], ns[3], ns[4]},
-        []graph.Node{ns[0], ns[1], ns[2], ns[4], ns[5], ns[6]},
-        []graph.Node{ns[2], ns[3], ns[4], ns[5], ns[6]},
+				[]graph.Node{ns[0], ns[1], ns[2], ns[4], ns[5], ns[6]},
+				[]graph.Node{ns[2], ns[3], ns[4], ns[5], ns[6]},
 			},
 		},
-    {
-      "t is 2, 2 paths",
-      []Path{
-        []graph.Node{ns[0], ns[1], ns[2]},
-        []graph.Node{ns[2], ns[3], ns[4]},
-      },
-      2,
-      []Path{
-        []graph.Node{ns[0], ns[1], ns[2], ns[3], ns[4]},
-      },
-    },
-    {
-      "t is 2, 2 disjoint paths",
-      []Path{
-        []graph.Node{ns[0], ns[1], ns[2]},
-        []graph.Node{ns[3], ns[4], ns[5]},
-      },
-      2,
-      []Path{
-        []graph.Node{ns[0], ns[1], ns[2], ns[3], ns[4], ns[5]},
-      },
-    },
-
+		{
+			"t is 2, 2 paths",
+			[]Path{
+				[]graph.Node{ns[0], ns[1], ns[2]},
+				[]graph.Node{ns[2], ns[3], ns[4]},
+			},
+			2,
+			[]Path{
+				[]graph.Node{ns[0], ns[1], ns[2], ns[3], ns[4]},
+			},
+		},
+		{
+			"t is 2, 2 disjoint paths",
+			[]Path{
+				[]graph.Node{ns[0], ns[1], ns[2]},
+				[]graph.Node{ns[3], ns[4], ns[5]},
+			},
+			2,
+			[]Path{
+				[]graph.Node{ns[0], ns[1], ns[2], ns[3], ns[4], ns[5]},
+			},
+		},
 	}
 
 	for _, tc := range tt {

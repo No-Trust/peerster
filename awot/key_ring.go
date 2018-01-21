@@ -219,7 +219,7 @@ func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
 	go func() {
 		ticker := time.NewTicker(time.Second * time.Duration(5)) // every 5 sec
 		defer ticker.Stop()
-		for _ = range ticker.C {
+		for range ticker.C {
 			ring.updateTrust(reptable)
 			ring.updatePending(reptable)
 			ring.updateConfidence()
@@ -230,7 +230,7 @@ func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
 // updateTrust recomputes the trust associated with each node to account for reputation updates or ring updates
 func (ring *KeyRing) updateTrust(reptable *rep.ReputationTable) {
 
-	for name, _ := range ring.ids {
+	for name := range ring.ids {
 		present := false
 		rep := float32(0.5)
 		if reptable != nil {

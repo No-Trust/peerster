@@ -18,7 +18,7 @@ func (table KeyTable) getPeerList() []string {
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
 	peers := make([]string, 0)
-	for key, _ := range table.db {
+	for key := range table.db {
 		peers = append(peers, key)
 	}
 	return peers

@@ -19,17 +19,17 @@ func comb(paths []Path, t int) []Path {
 // combHelper is a helper for comb
 func combHelper(paths []Path, t int) []Path {
 	if t == 0 {
-		return []Path{Path{}}
+		return []Path{{}}
 	}
 	if len(paths) == 0 {
-		return []Path{Path{}}
+		return []Path{{}}
 	}
 	if len(paths) == t {
 		return []Path{intersection(paths)}
 	}
 
 	with := combHelper(paths[1:], t-1)
-	for i, _ := range with {
+	for i := range with {
 		with[i] = intersection([][]graph.Node{paths[0], with[i]})
 	}
 

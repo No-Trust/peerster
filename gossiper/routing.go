@@ -76,7 +76,7 @@ func (r *RoutingTable) copy() *RoutingTable {
 func (r *RoutingTable) GetIds() []string {
 	r.mutex.Lock()
 	ids := make([]string, 0)
-	for k, _ := range r.table {
+	for k := range r.table {
 		if k != "" {
 			ids = append(ids, k)
 		}
@@ -95,7 +95,7 @@ func routerumor(g *Gossiper, rtimer uint) {
 	ticker := time.NewTicker(time.Second * time.Duration(rtimer)) // every rtimer sec
 	defer ticker.Stop()
 
-	for _ = range ticker.C {
+	for range ticker.C {
 		A := g.peerSet.RandomPeer()
 		if A != nil {
 
