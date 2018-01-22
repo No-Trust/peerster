@@ -9,12 +9,13 @@ import (
 	"encoding/gob"
 	"encoding/pem"
 	"errors"
-	"github.com/No-Trust/peerster/awot"
-	"github.com/No-Trust/peerster/common"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/No-Trust/peerster/awot"
+	"github.com/No-Trust/peerster/common"
 )
 
 var KEY_SIZE = 4096
@@ -52,7 +53,7 @@ func getKey(pubKeyFilename, filename string) rsa.PrivateKey {
 }
 
 // Construct a list of keyrecords from a directory where public keys are stored
-// Implicitely the name of the owner of each public key is the file name (without .pem extension)
+// Implicitly the name of the owner of each public key is the file name (without .pem extension)
 func getPublicKeysFromDirectory(dir string, except string) []awot.TrustedKeyRecord {
 	records := make([]awot.TrustedKeyRecord, 0)
 

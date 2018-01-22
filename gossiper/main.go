@@ -1,15 +1,16 @@
-// Main function, deals with user paramaters and launch the gossiper peer
+// Main function, deals with user parameters and launch the gossiper peer
 package main
 
 import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/No-Trust/peerster/common"
-	"github.com/No-Trust/peerster/rep"
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/No-Trust/peerster/common"
+	"github.com/No-Trust/peerster/rep"
 )
 
 const HOP_LIMIT = 10

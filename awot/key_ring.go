@@ -265,7 +265,7 @@ func (ring *KeyRing) updateConfidence() {
 	}
 }
 
-// selectBestPaths takes a set of paths and returns the biggest subset in wich all paths corresponds to the same end public key
+// selectBestPaths takes a set of paths and returns the biggest subset in which all paths corresponds to the same end public key
 // the key chosen is the one corresponding to the maximum number of paths
 // thread unsafe
 func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.PublicKey) {
@@ -281,13 +281,13 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.
 
 		edge := ring.graph.Edge(s, t)
 		if edge == nil {
-			log.Fatal("edge disapeared")
+			log.Fatal("edge disappeared")
 		}
 		key := edge.(Edge).Key
 		return paths, &key
 	}
 
-	occurences := make(map[string]int)
+	occurrences := make(map[string]int)
 
 	// the paths ends with the terminal
 	// use the last edge if exists
@@ -302,16 +302,16 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.
 
 		edge := ring.graph.Edge(s, t)
 		if edge == nil {
-			log.Fatal("edge disapeared")
+			log.Fatal("edge disappeared")
 		}
 		key := edge.(Edge).Key
-		occurences[key.N.String()+"-"+string(key.E)] += 1
+		occurrences[key.N.String()+"-"+string(key.E)] += 1
 	}
 
 	// find max
 	max := 0
 	var bkey string
-	for key, occ := range occurences {
+	for key, occ := range occurrences {
 		if occ > max {
 			max = occ
 			bkey = key
@@ -329,7 +329,7 @@ func (ring KeyRing) selectBestPaths(paths [][]graph.Node) ([][]graph.Node, *rsa.
 
 		edge := ring.graph.Edge(s, t)
 		if edge == nil {
-			log.Fatal("edge disapeared")
+			log.Fatal("edge disappeared")
 		}
 		key := edge.(Edge).Key
 		if bkey == key.N.String()+"-"+string(key.E) {
