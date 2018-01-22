@@ -2,6 +2,7 @@
 package awot
 
 import (
+	"fmt"
 	"testing"
 
 	"gonum.org/v1/gonum/graph"
@@ -48,9 +49,74 @@ func pathsSetEquals(ps1 []Path, ps2 []Path) bool {
 	return true
 }
 
+func TestIntersection(t *testing.T) {
+	ns := []node{}
+	for i := 0; i < 10; i++ {
+		ns = append(ns, node(i))
+	}
+
+	tt := []struct {
+		name         string
+		paths        []Path
+		intersection Path
+	}{
+		{"no paths", nil, nil},
+		{
+			"single path {{0,1,2}}",
+			[]Path{
+				{ns[0], ns[1], ns[2]},
+			},
+			Path{ns[0], ns[1], ns[2]},
+		},
+		{
+			"two disjoint paths {{0,1,2}, {3,4,5,6}}",
+			[]Path{
+				{ns[0], ns[1], ns[2]},
+				{ns[3], ns[4], ns[5], ns[6]},
+			},
+			Path{ns[0], ns[1], ns[2], ns[3], ns[4], ns[5], ns[6]},
+		},
+		{
+			"two overlapping paths {{0,1,2}, {1,2,5}}",
+			[]Path{
+				{ns[0], ns[1], ns[2]},
+				{ns[1], ns[2], ns[5]},
+			},
+			Path{ns[0], ns[1], ns[2], ns[5]},
+		},
+		{
+			"three overlapping paths {{0}, {0,4,5}, {4,6,8}}",
+			[]Path{
+				{ns[0]},
+				{ns[0], ns[4], ns[5]},
+				{ns[4], ns[6], ns[8]},
+			},
+			Path{ns[0], ns[4], ns[5], ns[6], ns[8]},
+		},
+		{
+			"three non ordered paths {{4}, {0,4,5}, {8,6,4,5}}",
+			[]Path{
+				{ns[4]},
+				{ns[0], ns[4], ns[5]},
+				{ns[8], ns[6], ns[4], ns[5]},
+			},
+			Path{ns[4], ns[0], ns[5], ns[8], ns[6]},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			r := intersection(tc.paths)
+			if !pathEquals(r, tc.intersection) {
+				t.Fatalf("intersection of %v should be %v, got %v", tc.name, tc.intersection, r)
+			}
+		})
+	}
+}
+
 func TestComb(t *testing.T) {
 	ns := []node{}
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 10; i++ {
 		ns = append(ns, node(i))
 	}
 
@@ -60,7 +126,8 @@ func TestComb(t *testing.T) {
 		t     int
 		combs []Path
 	}{
-		{"no paths", nil, 0, nil},
+		{"no paths, t is 0", nil, 0, nil},
+		{"no paths, t is 2", nil, 2, nil},
 		{
 			"t is 0",
 			[]Path{
@@ -128,5 +195,90 @@ func TestComb(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestProbabilityOfPath(t *testing.T) {
+	ns := []Node{}
+	for i := 0; i < 10; i++ {
+		p := 1.0 / float32(i+1)
+		ns = append(ns, Node{
+			name:        fmt.Sprintf("%d", i),
+			id:          int64(i),
+			probability: &p,
+		})
+	}
+
+	tt := []struct {
+		name string
+		path Path
+		prob float32
+	}{
+		{"empty path", nil, 1},
+		{"single node path {(0, p=1)}", Path{ns[0]}, 1.0},
+		{"two nodes path {(0, p=1), (1, p=0.5)}", Path{ns[0], ns[1]}, 0.5},
+		{"three nodes path {(3, p=1/4), (2, p=1/3), (1, p=1/2)}", Path{ns[3], ns[2], ns[1]}, 1. / 24},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			r := probabilityOfPath(tc.path)
+			if r != tc.prob {
+				t.Fatalf("probabilityOfPath %v should be %v, got %v", tc.name, tc.prob, r)
+			}
+		})
+	}
+}
+
+func TestProbabilityOfMinPaths(t *testing.T) {
+
+	ns := []Node{}
+	for i := 0; i < 10; i++ {
+		p := float32(1.0 / 2)
+		if i%2 == 0 {
+			p = float32(1.0)
+		}
+		ns = append(ns, Node{
+			name:        fmt.Sprintf("%d", i),
+			id:          int64(i),
+			probability: &p,
+		})
+	}
+
+	tt := []struct {
+		name  string
+		paths []Path
+		prob  float32
+	}{
+		{"empty paths", nil, 0.},
+		{"one path {{(0, p=1), (2,p=1), (3,p=1/2)}, (4,p=1)}", []Path{{ns[0], ns[2], ns[3], ns[4]}}, 1. / 2},
+		{"two paths {" +
+			"\t\n{(0,p=1), (2,p=1), (3,p=1/2), (4,p=1)}," +
+			"\t\n{(0,p=1), (6,p=1), (7,p=1/2), (4,p=1)}" +
+			"\n}\n",
+			[]Path{{ns[0], ns[2], ns[3], ns[4]}, {ns[0], ns[6], ns[7], ns[4]}},
+			3. / 4,
+		},
+		{
+			"three paths {" +
+				"\t\n{(0,p=1), (2,p=1), (3,p=1/2), (4,p=1)}," +
+				"\t\n{(0,p=1), (2,p=1), (5,p=1/2), (4,p=1)}" +
+				"\t\n{(0,p=1), (6,p=1), (5,p=1/2), (4,p=1)}" +
+				"\n}\n",
+			[]Path{
+				{ns[0], ns[2], ns[3], ns[4]},
+				{ns[0], ns[2], ns[5], ns[4]},
+				{ns[0], ns[6], ns[5], ns[4]},
+			},
+			3. / 4,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			r := probabilityOfMinPaths(tc.paths)
+			if r != tc.prob {
+				t.Fatalf("probabilityOfMinPaths %v should be %v, got %v", tc.name, tc.prob, r)
+			}
+		})
+	}
 }

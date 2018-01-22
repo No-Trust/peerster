@@ -38,8 +38,8 @@ func combHelper(paths []Path, t int) []Path {
 }
 
 // Compute the probability of the given shortest paths, using the inclusion exclusion formula
-func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
-	// convert minpaths to []Path
+// It does not account for the first node and last in each path
+func probabilityOfMinPaths(minpaths []Path) float32 {
 	minPaths := make([]Path, len(minpaths))
 	for i, v := range minpaths {
 		vp := v
@@ -58,7 +58,7 @@ func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
 		// n choose i such paths
 		npaths := comb(minPaths, i)
 		for _, path := range npaths {
-			pathP := ring.probabilityOfPath(path)
+			pathP := probabilityOfPath(path)
 			p += s * pathP
 		}
 
@@ -69,7 +69,7 @@ func (ring KeyRing) probabilityOfMinPaths(minpaths [][]graph.Node) float32 {
 }
 
 // Compute the probability of the given path
-func (ring KeyRing) probabilityOfPath(path []graph.Node) float32 {
+func probabilityOfPath(path Path) float32 {
 	p := float32(1.0)
 
 	for _, node := range path {
@@ -82,7 +82,7 @@ func (ring KeyRing) probabilityOfPath(path []graph.Node) float32 {
 
 // Return the intersection of given paths
 // e.g. A={1,2,3} B={2,4,5}, A inter B = {1,2,3,4,5}
-func intersection(paths [][]graph.Node) []graph.Node {
+func intersection(paths []Path) Path {
 	var nodes []graph.Node
 	for _, path := range paths {
 		nodes = append(nodes, path...)
