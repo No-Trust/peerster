@@ -44,23 +44,16 @@ func (n Node) ID() int64 {
 	return int64(n.id)
 }
 
-// DOTID returns a string representing the current state of a node
-func (n Node) DOTID() string {
-	p := *n.probability
-	percent := int(p * 100)
-	return fmt.Sprintf("%s_%d", n.name, percent)
-}
-
 // A KeyRing is a directed graph of Node and Edge
 type KeyRing struct {
-	source       string
-	ids          map[string]*Node // name -> Node
-	graph        simple.DirectedGraph
-	nextNode     int64
-	keyTable     KeyTable   // for updates
-	pending      *list.List // pending keyExchangeMessage
-	pendingMutex *sync.Mutex
-	mutex        *sync.Mutex
+	source       string               // the id of the source in the keyring
+	ids          map[string]*Node     // name -> Node mapping
+	graph        simple.DirectedGraph // graph
+	nextNode     int64                // for instanciating new nodes
+	keyTable     KeyTable             // for updates
+	pending      *list.List           // pending KeyExchangeMessage
+	pendingMutex *sync.Mutex          // mutex for pending KeyExchangeMessage
+	mutex        *sync.Mutex          // mutex for the keyring itself
 }
 
 ////////// Key Ring API
@@ -126,9 +119,9 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float3
 	ring.updateConfidence()
 }
 
-// NewKeyRing creates a new key-ring given some fully trusted (origin-public key) pairs and a pointer to a reputation table
-// Creating a Key Ring will also spawn a new goroutine for updating the key ring regularly
-func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord, reptable *rep.ReputationTable) KeyRing {
+// NewKeyRing creates a new key-ring given some fully trusted (origin-public key) pairs
+// For updating the KeyRing, use KeyRing.Start() after creation
+func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord) KeyRing {
 
 	keyTable := NewKeyTable(owner, key)
 	nextNode := int64(0)
@@ -204,20 +197,29 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		pendingMutex: &sync.Mutex{},
 		mutex:        &sync.Mutex{},
 	}
-
-	go ring.worker(reptable)
-
 	// return
 	return ring
 }
 
+// Start starts the updates on the KeyRing
+// It spawns a goroutine that will update the keyring regularly at the given rate
+func (ring *KeyRing) Start(rate time.Duration) {
+	go ring.worker(rate, nil)
+}
+
+// StartWithReputation starts the updates on the KeyRing using the given ReputationTable for some of them
+// It spawns a goroutine that will update the keyring regularly, at given rate
+func (ring *KeyRing) StartWithReputation(rate time.Duration, reptable *rep.ReputationTable) {
+	go ring.worker(rate, reptable)
+}
+
 ////////// Key Ring Implementation
 
-// worker performs periodic updates on a keyring
-func (ring *KeyRing) worker(reptable *rep.ReputationTable) {
+// worker performs periodic updates on a keyring, at given rate
+func (ring *KeyRing) worker(rate time.Duration, reptable *rep.ReputationTable) {
 	// updating the ring with yet unverified pending messages
 	go func() {
-		ticker := time.NewTicker(time.Second * time.Duration(5)) // every 5 sec
+		ticker := time.NewTicker(rate) // every 5 sec
 		defer ticker.Stop()
 		for range ticker.C {
 			ring.updateTrust(reptable)
@@ -491,6 +493,13 @@ func (ring *KeyRing) addEdge(a, b string, key rsa.PublicKey) error {
 }
 
 ////////// Dot and JSON Formating of Key Ring
+
+// DOTID returns a string representing the current state of a node
+func (n Node) DOTID() string {
+	p := *n.probability
+	percent := int(p * 100)
+	return fmt.Sprintf("%s_%d", n.name, percent)
+}
 
 type VertexViz struct {
 	Index       int64

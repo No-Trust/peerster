@@ -6,13 +6,14 @@ package main
 import (
 	"crypto/rsa"
 	"fmt"
+	"net"
+	"sync"
+	"time"
+
 	"github.com/No-Trust/peerster/awot"
 	"github.com/No-Trust/peerster/common"
 	"github.com/No-Trust/peerster/rep"
 	"github.com/dedis/protobuf"
-	"net"
-	"sync"
-	"time"
 )
 
 // Gossiper implementation
@@ -66,8 +67,9 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		key:                 key,
 		reputationTable:     reptable,
 		trustedKeys:         trustedKeys,
-		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys, &reptable),
+		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys),
 	}
+	gossiper.keyRing.StartWithReputation(time.Duration(5)*time.Second, &reptable)
 	return &gossiper
 }
 
