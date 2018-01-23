@@ -15,13 +15,13 @@ func TestKeyExchangeSigning(t *testing.T) {
 	B := "peerB"
 
 	// generate A's key
-	keyA, err := rsa.GenerateKey(rand.Reader, 4096)
+	keyA, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
 		t.Errorf("Could not create private key: %v", err)
 	}
 
 	// generate B's key
-	keyB, err := rsa.GenerateKey(rand.Reader, 4096)
+	keyB, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
 		t.Errorf("Could not create private key: %v", err)
 	}
