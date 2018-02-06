@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/No-Trust/peerster/rep"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
@@ -42,6 +41,13 @@ func (e Edge) To() graph.Node { return e.T }
 // ID returns the integer ID of a node
 func (n Node) ID() int64 {
 	return int64(n.id)
+}
+
+// A ReputationTable is the interface that wraps the Reputation function
+// Reputation returns a reputation of a node with given name, as a float32 between 0 and 1,
+// 0 being the worst reputation and 1 the best. It also returns a boolean informing if the reputation actually exists.
+type ReputationTable interface {
+	Reputation(string) (float32, bool)
 }
 
 // A KeyRing is a directed graph of Node and Edge
@@ -209,14 +215,14 @@ func (ring *KeyRing) Start(rate time.Duration) {
 
 // StartWithReputation starts the updates on the KeyRing using the given ReputationTable for some of them
 // It spawns a goroutine that will update the keyring regularly, at given rate
-func (ring *KeyRing) StartWithReputation(rate time.Duration, reptable *rep.ReputationTable) {
+func (ring *KeyRing) StartWithReputation(rate time.Duration, reptable ReputationTable) {
 	go ring.worker(rate, reptable)
 }
 
 ////////// Key Ring Implementation
 
 // worker performs periodic updates on a keyring, at given rate
-func (ring *KeyRing) worker(rate time.Duration, reptable *rep.ReputationTable) {
+func (ring *KeyRing) worker(rate time.Duration, reptable ReputationTable) {
 	// updating the ring with yet unverified pending messages
 	go func() {
 		ticker := time.NewTicker(rate) // every 5 sec
@@ -230,13 +236,13 @@ func (ring *KeyRing) worker(rate time.Duration, reptable *rep.ReputationTable) {
 }
 
 // updateTrust recomputes the trust associated with each node to account for reputation updates or ring updates
-func (ring *KeyRing) updateTrust(reptable *rep.ReputationTable) {
+func (ring *KeyRing) updateTrust(reptable ReputationTable) {
 
 	for name := range ring.ids {
 		present := false
 		rep := float32(0.5)
 		if reptable != nil {
-			rep, present = reptable.GetSigRep(name)
+			rep, present = reptable.Reputation(name)
 		}
 		if !present {
 			rep = 0.5
@@ -372,7 +378,7 @@ func (ring *KeyRing) updateMessage(msg KeyExchangeMessage, confidenceOwner float
 }
 
 // updatePending tries to update the KeyRing with old pending messages
-func (ring *KeyRing) updatePending(reptable *rep.ReputationTable) {
+func (ring *KeyRing) updatePending(reptable ReputationTable) {
 	ring.pendingMutex.Lock()
 	defer ring.pendingMutex.Unlock()
 
@@ -383,7 +389,7 @@ func (ring *KeyRing) updatePending(reptable *rep.ReputationTable) {
 		ok := false
 		reputationOwner := float32(0.5)
 		if reptable != nil {
-			reputationOwner, ok = reptable.GetSigRep(msg.Owner)
+			reputationOwner, ok = reptable.Reputation(msg.Owner)
 		}
 		if !ok {
 			reputationOwner = 0.5

@@ -44,6 +44,14 @@ func (table *ReputationTable) GetSigRep(peer string) ( /*rep*/ float32 /*ok*/, b
 }
 
 /**
+ * Returns the signature-based reputation of the given peer.
+ * Same as GetSigRep, for awot's ReputationTable interface compatibility.
+ */
+func (table *ReputationTable) Reputation(peer string) (float32, bool) {
+	return table.GetSigRep(peer)
+}
+
+/**
  * Performs an operation for each entry in the signature-based
  * reputation table. The operation is defined as a callback
  * function that takes a peer and a reputation as parameters.

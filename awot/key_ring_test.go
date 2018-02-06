@@ -50,7 +50,7 @@ func TestKeyRing(t *testing.T) {
 
 	ring := NewKeyRing(source, sourceKey.PublicKey, trustedPeersRecords)
 
-	for id, _ := range trustedPeers {
+	for id := range trustedPeers {
 		_, ok := ring.GetRecord(id)
 		if !ok {
 			t.Fatalf("could not get record of %s in keyring", id)
