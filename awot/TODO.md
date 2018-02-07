@@ -19,3 +19,9 @@ Any new idea is welcomed.
 ## Code quality
 - key_ring.go needs re-factoring (to be more general) and tests.
 - More test cases everywhere.
+
+
+## Named possible improvements
+- key_record.go TrustedKeyRecord : use struct embedding over composition for the KeyRecord.
+- key_ring.go KeyRing : use struct embedding over composition for the KeyTable.
+- key_ring.go : split KeyRing implementation and visualization.

@@ -56,7 +56,7 @@ type KeyRing struct {
 	ids          map[string]*Node     // name -> Node mapping
 	graph        simple.DirectedGraph // graph
 	nextNode     int64                // for instanciating new nodes
-	keyTable     KeyTable             // for updates
+	keyTable     keyTable             // for updates
 	pending      *list.List           // pending KeyExchangeMessage
 	pendingMutex *sync.Mutex          // mutex for pending KeyExchangeMessage
 	mutex        *sync.Mutex          // mutex for the keyring itself
@@ -129,7 +129,7 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float3
 // For updating the KeyRing, use KeyRing.Start() after creation
 func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord) KeyRing {
 
-	keyTable := NewKeyTable(owner, key)
+	keyTable := newKeyTable(owner, key)
 	nextNode := int64(0)
 
 	// map

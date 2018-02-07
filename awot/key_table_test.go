@@ -8,7 +8,7 @@ import (
 )
 
 func TestSigningExchangeMessage(t *testing.T) {
-	table := newKeyTable()
+	table := newEmptyKeyTable()
 
 	r1K, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -40,7 +40,7 @@ func TestSigningExchangeMessage(t *testing.T) {
 }
 
 func TestAddRetrieveRemove(t *testing.T) {
-	table := newKeyTable()
+	table := newEmptyKeyTable()
 
 	_, present := table.getKey("node1")
 	if present {
