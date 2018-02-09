@@ -9,6 +9,7 @@ Any new idea is welcomed.
 
 
 ## Visualization
+- Add color for edges function of the public key (if different public keys to the same peer, different colors)
 - Implement an optional web-server displaying the keyring as done in Peerster's gossiper.
 - Make the visualization dynamic.
 
