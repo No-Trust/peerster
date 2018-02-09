@@ -3,13 +3,10 @@ package awot
 import (
 	"container/list"
 	"crypto/rsa"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -131,6 +128,8 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 
 	keyTable := newKeyTable(owner, key)
 	nextNode := int64(0)
+
+	fingerprint(key)
 
 	// map
 	ids := make(map[string]*Node)
@@ -507,65 +506,6 @@ func (n Node) DOTID() string {
 	return fmt.Sprintf("%s_%d", n.name, percent)
 }
 
-type VertexViz struct {
-	Index       int64
-	Name        string
-	Probability float32
-	Confidence  float32
-}
-
-type EdgeViz struct {
-	Source string
-	Target string
-}
-
-type GraphViz struct {
-	Nodes []VertexViz
-	Links []EdgeViz
-}
-
-// graphViz returns a representation of the KeyRing in GraphViz structure
-func (ring KeyRing) graphViz() GraphViz {
-	ring.mutex.Lock()
-	defer ring.mutex.Unlock()
-
-	nodes := make([]VertexViz, 0)
-	rnodes := ring.graph.Nodes()
-	for _, node := range rnodes {
-		n := node.(Node)
-		rec, _ := ring.GetRecord(n.name)
-		v := VertexViz{
-			Index:       n.ID(),
-			Name:        n.name,
-			Probability: *n.probability,
-			Confidence:  rec.Confidence,
-		}
-		nodes = append(nodes, v)
-	}
-
-	links := make([]EdgeViz, 0)
-	redges := ring.graph.Edges()
-
-	for _, edge := range redges {
-		e := EdgeViz{
-			Source: edge.From().(Node).name,
-			Target: edge.To().(Node).name,
-		}
-		links = append(links, e)
-	}
-
-	return GraphViz{
-		Nodes: nodes,
-		Links: links,
-	}
-}
-
-// JSON Marshals a KeyRing to a json format {nodes: ..., edges: a->b}
-func (ring KeyRing) JSON() ([]byte, error) {
-	gviz := ring.graphViz()
-	return json.Marshal(gviz)
-}
-
 // Dot marshals a keyring to a dot format, or nil if error
 func (ring KeyRing) Dot() *[]byte {
 	ring.mutex.Lock()
@@ -578,23 +518,4 @@ func (ring KeyRing) Dot() *[]byte {
 		return nil
 	}
 	return &dot
-}
-
-// SaveAsDot marshals the graph and writes to file in dot format
-func (ring KeyRing) SaveAsDot(filename string) error {
-	ring.mutex.Lock()
-	defer ring.mutex.Unlock()
-	path, err := filepath.Abs(filename)
-	if err != nil {
-		return err
-	}
-	title := fmt.Sprintf("%d", time.Now().Unix())
-	bytes, err := dot.Marshal(&(ring.graph), title, "", "", false)
-	if err != nil {
-		return err
-	}
-	f := fmt.Sprintf("%s_%s.dot", path, title)
-	err = ioutil.WriteFile(f, bytes, 0644)
-
-	return err
 }
