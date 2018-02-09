@@ -13,6 +13,7 @@ func pubKeyEquals(a rsa.PublicKey, b rsa.PublicKey) bool {
 }
 
 // TestDeSerialization tests functions SerializeKey and DeserializeKey
+// DeserializeKey(SerializeKey(key)) should be equal to key
 func TestDeSerialization(t *testing.T) {
 	keyPri, err := rsa.GenerateKey(rand.Reader, 64)
 

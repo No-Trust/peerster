@@ -51,7 +51,7 @@ func pathsSetEquals(ps1 []Path, ps2 []Path) bool {
 
 func TestIntersection(t *testing.T) {
 	ns := []node{}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 12; i++ {
 		ns = append(ns, node(i))
 	}
 
@@ -102,6 +102,22 @@ func TestIntersection(t *testing.T) {
 			},
 			Path{ns[4], ns[0], ns[5], ns[8], ns[6]},
 		},
+		{
+			"two empty paths {{}, {}}",
+			[]Path{
+				{},
+				{},
+			},
+			Path{},
+		},
+		{
+			"two paths including one empty path  {{0, 1, 2}, {}}",
+			[]Path{
+				{ns[0], ns[1], ns[2]},
+				{},
+			},
+			Path{ns[0], ns[1], ns[2]},
+		},
 	}
 
 	for _, tc := range tt {
@@ -116,7 +132,7 @@ func TestIntersection(t *testing.T) {
 
 func TestComb(t *testing.T) {
 	ns := []node{}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 12; i++ {
 		ns = append(ns, node(i))
 	}
 
@@ -183,6 +199,34 @@ func TestComb(t *testing.T) {
 			2,
 			[]Path{
 				[]graph.Node{ns[0], ns[1], ns[2], ns[3], ns[4], ns[5]},
+			},
+		},
+		{
+			"t is 3, 5 paths",
+			[]Path{
+				[]graph.Node{ns[0], ns[1], ns[2]},
+				[]graph.Node{ns[2], ns[4], ns[5]},
+				[]graph.Node{ns[4]},
+				[]graph.Node{ns[0], ns[11], ns[6], ns[10]},
+				[]graph.Node{ns[8], ns[2]},
+			},
+			3,
+			[]Path{
+				[]graph.Node{ns[0], ns[1], ns[2], ns[4], ns[5]},
+				[]graph.Node{ns[0], ns[1], ns[2], ns[4], ns[5], ns[11], ns[6], ns[10]},
+				[]graph.Node{ns[0], ns[1], ns[2], ns[4], ns[5], ns[8]},
+
+				[]graph.Node{ns[0], ns[1], ns[2], ns[4], ns[11], ns[6], ns[10]},
+				[]graph.Node{ns[0], ns[1], ns[2], ns[4], ns[8]},
+
+				[]graph.Node{ns[0], ns[1], ns[2], ns[11], ns[6], ns[10], ns[8]},
+
+				[]graph.Node{ns[2], ns[4], ns[5], ns[0], ns[11], ns[6], ns[10]},
+				[]graph.Node{ns[2], ns[4], ns[5], ns[8]},
+
+				[]graph.Node{ns[2], ns[4], ns[5], ns[0], ns[11], ns[6], ns[10], ns[8]},
+
+				[]graph.Node{ns[4], ns[0], ns[11], ns[6], ns[10], ns[8], ns[2]},
 			},
 		},
 	}
