@@ -6,6 +6,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"time"
+
+	"gonum.org/v1/gonum/graph/encoding/dot"
 )
 
 // VertexViz is a Vertex for a visualization of a KeyRing
@@ -29,14 +33,35 @@ type GraphViz struct {
 	Links []EdgeViz
 }
 
+// DOTID returns a string representing the current state of a node
+func (n Node) DOTID() string {
+	p := *n.probability
+	percent := int(p * 100)
+	return fmt.Sprintf("%s_%d", n.name, percent)
+}
+
+// Dot marshals a keyring to a dot format, or nil if error
+func (ring KeyRing) Dot() *[]byte {
+	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
+
+	title := fmt.Sprintf("Key Ring - %v", time.Now().UTC().Format(time.RFC3339))
+
+	dot, err := dot.Marshal(&(ring.graph), title, "", "", false)
+	if err != nil {
+		return nil
+	}
+	return &dot
+}
+
 // JSON Marshals a KeyRing to a json format {nodes: ..., edges: a->b}
 func (ring KeyRing) JSON() ([]byte, error) {
-	gviz := graphViz(ring)
+	gviz := GraphVizRepr(ring)
 	return json.Marshal(gviz)
 }
 
-// graphViz returns a representation of the KeyRing in GraphViz structure
-func graphViz(ring KeyRing) GraphViz {
+// GraphVizRepr returns a representation of the KeyRing in GraphViz structure
+func GraphVizRepr(ring KeyRing) GraphViz {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
@@ -61,7 +86,7 @@ func graphViz(ring KeyRing) GraphViz {
 		e := EdgeViz{
 			Source:      edge.From().(Node).name,
 			Target:      edge.To().(Node).name,
-			Fingerprint: fingerprint(edge.(Edge).Key),
+			Fingerprint: Fingerprint(edge.(Edge).Key),
 		}
 		links = append(links, e)
 	}
@@ -72,8 +97,8 @@ func graphViz(ring KeyRing) GraphViz {
 	}
 }
 
-// fingerprint returns the hex formatted fingerprint of the given rsa public key
-func fingerprint(pub rsa.PublicKey) string {
+// Fingerprint returns the hex formatted fingerprint of the given rsa public key
+func Fingerprint(pub rsa.PublicKey) string {
 	h := md5.New()
 	binary.Write(h, binary.LittleEndian, pub.E)
 	binary.Write(h, binary.LittleEndian, *pub.N)

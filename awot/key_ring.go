@@ -4,14 +4,12 @@ import (
 	"container/list"
 	"crypto/rsa"
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"sync"
 	"time"
 
 	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
@@ -128,8 +126,6 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 
 	keyTable := newKeyTable(owner, key)
 	nextNode := int64(0)
-
-	fingerprint(key)
 
 	// map
 	ids := make(map[string]*Node)
@@ -495,27 +491,4 @@ func (ring *KeyRing) addEdge(a, b string, key rsa.PublicKey) error {
 
 	ring.graph.SetEdge(Edge{F: *vA, T: *vB, Key: key})
 	return nil
-}
-
-////////// Dot and JSON Formating of Key Ring
-
-// DOTID returns a string representing the current state of a node
-func (n Node) DOTID() string {
-	p := *n.probability
-	percent := int(p * 100)
-	return fmt.Sprintf("%s_%d", n.name, percent)
-}
-
-// Dot marshals a keyring to a dot format, or nil if error
-func (ring KeyRing) Dot() *[]byte {
-	ring.mutex.Lock()
-	defer ring.mutex.Unlock()
-
-	title := fmt.Sprintf("Key Ring - %v", time.Now().UTC().Format(time.RFC3339))
-
-	dot, err := dot.Marshal(&(ring.graph), title, "", "", false)
-	if err != nil {
-		return nil
-	}
-	return &dot
 }
