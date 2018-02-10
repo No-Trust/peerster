@@ -56,7 +56,13 @@
       links[i].weight = 1;
     }
 
-    var link = svg.append("g")
+    var glinks = svg.selectAll('g.glink')
+      .data(graph.Links)
+      .enter()
+      .append('g')
+      .classed('glink', true);
+
+    var link = glinks.append("g")
       .attr("class", "links")
       .selectAll("line")
       .data(graph.Links)
@@ -68,6 +74,29 @@
       .attr("stroke-width", function(d) {
         return 1;
       });
+
+    var linkText = svg.selectAll("g.glink")
+      .data(graph.Links)
+      .append("text")
+      .attr("font-family", "Arial, Helvetica, sans-serif")
+      .attr("x", function(d) {
+        if (d.target.x > d.source.x) {
+          return (d.source.x + (d.target.x - d.source.x) / 2);
+        } else {
+          return (d.target.x + (d.source.x - d.target.x) / 2);
+        }
+      })
+      .attr("y", function(d) {
+        if (d.target.y > d.source.y) {
+          return (d.source.y + (d.target.y - d.source.y) / 2);
+        } else {
+          return (d.target.y + (d.source.y - d.target.y) / 2);
+        }
+      });
+      // .attr("fill", "Black")
+      // .text(function(d) {
+      //   return d.Fingerprint;
+      // });
 
     var gnodes = svg.selectAll('g.gnode')
       .data(graph.Nodes)
@@ -98,7 +127,7 @@
 
     text.append("text")
       .attr("x", 20)
-      .attr("y", -10)//".31em")
+      .attr("y", -10) //".31em")
       .style("font-family", "sans-serif")
       .style("font-size", "1.2em")
       .text(function(d) {
@@ -113,7 +142,7 @@
       .style("font-family", "sans-serif")
       .style("font-size", "1.0em")
       .text(function(d) {
-        return "P: " + Math.round(d.Probability*100)/100 + " C: " + Math.round(d.Confidence*100)/100 ;
+        return "P: " + Math.round(d.Probability * 100) / 100 + " C: " + Math.round(d.Confidence * 100) / 100;
       });
 
 
@@ -154,7 +183,23 @@
       text
         .attr("transform", function(d) {
           return "translate(" + d.x + "," + d.y + ")";
+        });
+
+      linkText
+        .attr("x", function(d) {
+          if (d.target.x > d.source.x) {
+            return (d.source.x + (d.target.x - d.source.x) / 2);
+          } else {
+            return (d.target.x + (d.source.x - d.target.x) / 2);
+          }
         })
+        .attr("y", function(d) {
+          if (d.target.y > d.source.y) {
+            return (d.source.y + (d.target.y - d.source.y) / 2);
+          } else {
+            return (d.target.y + (d.source.y - d.target.y) / 2);
+          }
+        });
     }
   });
 
