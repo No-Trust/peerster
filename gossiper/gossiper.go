@@ -67,7 +67,7 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 		key:                 key,
 		reputationTable:     reptable,
 		trustedKeys:         trustedKeys,
-		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys),
+		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys, parameters.KeyConfidenceThreshold),
 	}
 	gossiper.keyRing.StartWithReputation(time.Duration(5)*time.Second, &reptable)
 	return &gossiper

@@ -55,16 +55,30 @@ type KeyRing struct {
 	pending      *list.List           // pending KeyExchangeMessage
 	pendingMutex *sync.Mutex          // mutex for pending KeyExchangeMessage
 	mutex        *sync.Mutex          // mutex for the keyring itself
+	threshold    float32              // confidence threshold for trusted keys
 }
 
 ////////// Key Ring API
 
-// GetKey returns the key of peer with given name and true if it exists, otherwise returns false
+// GetKey returns the key of peer with given name and true if it exists, otherwise returns false.
+// If the confidence level is too low for the key, it does not return the key and reports as if there where none.
+// This should be used e.g. when trying to communicate with a peer and threfore needing its key.
 func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
-	return ring.keyTable.getKey(name)
+	rec, ok := ring.keyTable.get(name)
+	if !ok {
+		return rec.Record.KeyPub, ok
+	}
+
+	if rec.Confidence < ring.threshold {
+		return rsa.PublicKey{}, false
+	}
+
+	return rec.Record.KeyPub, ok
 }
 
-// GetRecord returns the record of peer with given name and true if it exists, otherwise returns false
+// GetRecord returns the record of peer with given name and true if it exists, otherwise returns false.
+// Returns the record even if the confidence level is lower than the threshold.
+// This should be used e.g. when updating reputation of a peer.
 func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
 	return ring.keyTable.get(name)
 }
@@ -120,9 +134,14 @@ func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float3
 	ring.updateConfidence()
 }
 
-// NewKeyRing creates a new key-ring given some fully trusted (origin-public key) pairs
-// For updating the KeyRing, use KeyRing.Start() after creation
-func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord) KeyRing {
+// NewKeyRing creates a new key-ring given some fully trusted (origin-public key) pairs.
+// For updating the KeyRing, use KeyRing.Start() after creation.
+// Parameters :
+// 	owner : the name (id) of the owner of the keychain (typically this network node)
+// 	key : the public key of owner
+// 	trustedRecords : the fully trusted bootstrap records : trusted public keys of initiators
+// 	threshold : the confidence threshold; below it the keys will not be given to the user
+func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyRecord, threshold float32) KeyRing {
 
 	keyTable := newKeyTable(owner, key)
 	nextNode := int64(0)
@@ -197,6 +216,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		pending:      list.New(),
 		pendingMutex: &sync.Mutex{},
 		mutex:        &sync.Mutex{},
+		threshold:    threshold,
 	}
 	// return
 	return ring

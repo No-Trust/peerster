@@ -48,7 +48,7 @@ func TestKeyRing(t *testing.T) {
 		trustedPeersRecords = append(trustedPeersRecords, rec)
 	}
 
-	ring := NewKeyRing(source, sourceKey.PublicKey, trustedPeersRecords)
+	ring := NewKeyRing(source, sourceKey.PublicKey, trustedPeersRecords, 0.0)
 
 	for id := range trustedPeers {
 		_, ok := ring.GetRecord(id)

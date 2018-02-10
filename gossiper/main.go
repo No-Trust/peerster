@@ -36,6 +36,7 @@ func main() {
 	noforward := flag.Bool("noforward", false, "for testing : forwarding of route rumors only")
 	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
 	keysdir := flag.String("keys", ".", "directory for boostrap public keys")
+	confidenceThreshold := flag.Float64("cthresh", 0.20, "confidence threshold for collected public keys")
 	flag.Parse()
 
 	fmt.Println("given peers :", *peers)
@@ -84,26 +85,27 @@ func main() {
 	common.CheckError(err)
 
 	parameters := Parameters{
-		Identifier:           identifier,
-		Name:                 *name,
-		Etimer:               *etimer,
-		Rtimer:               *rtimer,
-		Reptimer:             *reptimer,
-		Hoplimit:             HOP_LIMIT,
-		NoForward:            *noforward,
-		NatTraversal:         *nat_traversal,
-		GossipAddr:           *gossipAddr,
-		GossipConn:           *gossipConn,
-		UIAddr:               *UIAddr,
-		UIConn:               *UIConn,
-		ChannelSize:          CHANNEL_SIZE,
-		ChunkSize:            CHUNK_SIZE,
-		FilesDirectory:       FILES_DIR,
-		ChunksDirectory:      CHUNKS_DIR,
-		HashLength:           HASH_LENGTH,
-		KeyFileName:          KEY_DIRECTORY + "private.key",
-		PubKeyFileName:       KEY_DIRECTORY + identifier + ".pub",
-		TrustedKeysDirectory: *keysdir,
+		Identifier:             identifier,
+		Name:                   *name,
+		Etimer:                 *etimer,
+		Rtimer:                 *rtimer,
+		Reptimer:               *reptimer,
+		Hoplimit:               HOP_LIMIT,
+		NoForward:              *noforward,
+		NatTraversal:           *nat_traversal,
+		GossipAddr:             *gossipAddr,
+		GossipConn:             *gossipConn,
+		UIAddr:                 *UIAddr,
+		UIConn:                 *UIConn,
+		ChannelSize:            CHANNEL_SIZE,
+		ChunkSize:              CHUNK_SIZE,
+		FilesDirectory:         FILES_DIR,
+		ChunksDirectory:        CHUNKS_DIR,
+		HashLength:             HASH_LENGTH,
+		KeyFileName:            KEY_DIRECTORY + "private.key",
+		PubKeyFileName:         KEY_DIRECTORY + identifier + ".pub",
+		TrustedKeysDirectory:   *keysdir,
+		KeyConfidenceThreshold: float32(*confidenceThreshold),
 	}
 
 	var g *Gossiper = NewGossiper(parameters, peerAddrs)
