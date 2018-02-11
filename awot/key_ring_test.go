@@ -13,6 +13,179 @@ type peer struct {
 	key rsa.PrivateKey
 }
 
+type edge struct {
+	from string
+	to   string
+}
+
+// TestGraph tests the underlying graphs functions of KeyRing
+func TestGraph(t *testing.T) {
+	sourceKey, err := rsa.GenerateKey(rand.Reader, 512)
+	if err != nil {
+		t.Fatalf("could not generate rsa key: %v", err)
+	}
+
+	// create a test KeyRing (since there is no trusted records, it is useless)
+	ring := NewKeyRing("source", sourceKey.PublicKey, nil, 0.0)
+
+	// contains should return true for an existing node
+	if !ring.contains("source") {
+		t.Fatalf("KeyRing does not contain source node")
+	}
+
+	// contains should return false for a non existing nodes
+	if ring.contains("non existent node") {
+		t.Fatalf("KeyRing contains a non added node")
+	}
+
+	// addNode should add a node and its probability to the KeyRing
+	ring.addNode("addedNode", 0.123)
+	if !ring.contains("addedNode") {
+		t.Fatalf("addNode should add a non existing node")
+	}
+	if *ring.ids["addedNode"].probability != 0.123 {
+		t.Fatalf("addNode should set the probability of the added node")
+	}
+
+	// addNode should update the probability of a node if it already exists
+	ring.addNode("addedNode", 0.987)
+	if *ring.ids["addedNode"].probability != 0.987 {
+		t.Fatalf("addNode should update the probability of an existing node")
+	}
+
+	// addEdge should add an edge and its public key to the KeyRing
+	err = ring.addEdge("source", "addedNode", sourceKey.PublicKey)
+	if err != nil {
+		t.Fatalf("Adding a non existing edge should be possible")
+	}
+	if !ring.graph.HasEdgeBetween(ring.ids["source"], ring.ids["addedNode"]) {
+		t.Fatalf("KeyRing does not contain added edge")
+	}
+
+	// addEdge should not add an edge with equal source and terminal
+	err = ring.addEdge("addedNode", "addedNode", rsa.PublicKey{})
+	if err == nil {
+		t.Fatalf("Adding an edge between same vertex should not be possible")
+	}
+
+	// addEdge should not add an edge between two non-existing nodes
+	err = ring.addEdge("imaginary node", "other imaginary node", rsa.PublicKey{})
+	if err == nil {
+		t.Fatalf("Adding an edge with non existing nodes should not be possible")
+	}
+
+	// addEdge should not add an edge with a non existing terminal
+	err = ring.addEdge("source", "non existing node", rsa.PublicKey{})
+	if err == nil {
+		t.Fatalf("Adding an edge with non existing terminal should not be possible")
+	}
+}
+
+// TestPhi tests the phi method
+func TestPhi(t *testing.T) {
+	tt := []struct {
+		name     string
+		source   string
+		nodes    []string
+		edges    []edge
+		terminal string
+		rep      float32
+		phi      float32
+	}{
+		{
+			name:   "source -> A -> B (no rep)",
+			source: "source",
+			nodes: []string{
+				"A", "B",
+			},
+			edges: []edge{
+				edge{"source", "A"},
+				edge{"A", "B"},
+			},
+			terminal: "B",
+			rep:      1,
+			phi:      0.5,
+		},
+		{
+			name:   "source -> A -> B -> C - > D (no rep)",
+			source: "source",
+			nodes: []string{
+				"A", "B", "C", "D",
+			},
+			edges: []edge{
+				edge{"source", "A"},
+				edge{"A", "B"},
+				edge{"B", "C"},
+				edge{"C", "D"},
+			},
+			terminal: "D",
+			rep:      1,
+			phi:      0.25,
+		},
+		{
+			name:   "source -> A -> B (rep 0.1)",
+			source: "source",
+			nodes: []string{
+				"A", "B",
+			},
+			edges: []edge{
+				edge{"source", "A"},
+				edge{"A", "B"},
+			},
+			terminal: "B",
+			rep:      0.1,
+			phi:      0.1,
+		},
+		{
+			name:   "source -> A -> B (no rep)",
+			source: "source",
+			nodes: []string{
+				"A", "B",
+			},
+			edges: []edge{
+				edge{"source", "A"},
+				edge{"A", "B"},
+			},
+			terminal: "source",
+			rep:      1,
+			phi:      1,
+		},
+		{
+			name:   "source -> A -> B (no rep)",
+			source: "source",
+			nodes: []string{
+				"A", "B",
+			},
+			edges: []edge{
+				edge{"source", "A"},
+				edge{"A", "B"},
+			},
+			terminal: "C",
+			rep:      1,
+			phi:      0,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ring := NewKeyRing(tc.source, rsa.PublicKey{}, nil, 0)
+			for _, node := range tc.nodes {
+				ring.addNode(node, 1)
+			}
+
+			for _, edge := range tc.edges {
+				ring.addEdge(edge.from, edge.to, rsa.PublicKey{})
+			}
+
+			p := ring.phi(tc.terminal, tc.rep)
+			if p != tc.phi {
+				t.Fatalf("phi of %v in %v should be %v, got %v", tc.terminal, tc.name, tc.phi, p)
+			}
+		})
+	}
+
+}
+
 func TestKeyRing(t *testing.T) {
 	source := "source"
 	sourceKey, err := rsa.GenerateKey(rand.Reader, 512)

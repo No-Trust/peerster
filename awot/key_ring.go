@@ -60,80 +60,6 @@ type KeyRing struct {
 
 ////////// Key Ring API
 
-// GetKey returns the key of peer with given name and true if it exists, otherwise returns false.
-// If the confidence level is too low for the key, it does not return the key and reports as if there where none.
-// This should be used e.g. when trying to communicate with a peer and threfore needing its key.
-func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
-	rec, ok := ring.keyTable.get(name)
-	if !ok {
-		return rec.Record.KeyPub, ok
-	}
-
-	if rec.Confidence < ring.threshold {
-		return rsa.PublicKey{}, false
-	}
-
-	return rec.Record.KeyPub, ok
-}
-
-// GetRecord returns the record of peer with given name and true if it exists, otherwise returns false.
-// Returns the record even if the confidence level is lower than the threshold.
-// This should be used e.g. when updating reputation of a peer.
-func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
-	return ring.keyTable.get(name)
-}
-
-// GetPeerList returns the list of peer names the keyring has a public key for
-func (ring KeyRing) GetPeerList() []string {
-	return ring.keyTable.getPeerList()
-}
-
-// AddUnverified adds a KeyExchangeMessage that could not yet be verified (e.g. lack of signer's key)
-func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
-	ring.mutex.Lock()
-	defer ring.mutex.Unlock()
-	ring.pending.PushBack(msg)
-}
-
-// Add updates the key ring with the given (verified) keyrecord and origin of the signature
-// It assumes that the record's signature has been verified
-func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float32) {
-	// do not update if the signer is unknown
-	if !ring.contains(sigOrigin) {
-		return
-	}
-
-	if rec.Owner == sigOrigin {
-		// self signed record
-		return
-	}
-
-	// add owner of the key if not yet known, or update its probability
-	ring.addNode(rec.Owner, 0.0)
-
-	// add edge
-	err := ring.addEdge(sigOrigin, rec.Owner, rec.KeyPub)
-
-	if err != nil {
-		log.Fatal("KeyRing Add : could not add edge")
-	}
-
-	// recompute its probability
-	probability := ring.phi(rec.Owner, reputationOwner)
-
-	// update probability
-	ring.addNode(rec.Owner, probability)
-
-	// save key with "unknown" confidence, that will be computed after
-	// ring.keyTable.add(TrustedKeyRecord{
-	// 	Record:     rec,
-	// 	Confidence: float32(0.0),
-	// })
-
-	// // recompute the confidence of the keys
-	ring.updateConfidence()
-}
-
 // NewKeyRing creates a new key-ring given some fully trusted (origin-public key) pairs.
 // For updating the KeyRing, use KeyRing.Start() after creation.
 // Parameters :
@@ -232,6 +158,80 @@ func (ring *KeyRing) Start(rate time.Duration) {
 // It spawns a goroutine that will update the keyring regularly, at given rate
 func (ring *KeyRing) StartWithReputation(rate time.Duration, reptable ReputationTable) {
 	go ring.worker(rate, reptable)
+}
+
+// GetKey returns the key of peer with given name and true if it exists, otherwise returns false.
+// If the confidence level is too low for the key, it does not return the key and reports as if there where none.
+// This should be used e.g. when trying to communicate with a peer and threfore needing its key.
+func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
+	rec, ok := ring.keyTable.get(name)
+	if !ok {
+		return rec.Record.KeyPub, ok
+	}
+
+	if rec.Confidence < ring.threshold {
+		return rsa.PublicKey{}, false
+	}
+
+	return rec.Record.KeyPub, ok
+}
+
+// GetRecord returns the record of peer with given name and true if it exists, otherwise returns false.
+// Returns the record even if the confidence level is lower than the threshold.
+// This should be used e.g. when updating reputation of a peer.
+func (ring KeyRing) GetRecord(name string) (TrustedKeyRecord, bool) {
+	return ring.keyTable.get(name)
+}
+
+// GetPeerList returns the list of peer names the keyring has a public key for
+func (ring KeyRing) GetPeerList() []string {
+	return ring.keyTable.getPeerList()
+}
+
+// AddUnverified adds a KeyExchangeMessage that could not yet be verified (e.g. lack of signer's key)
+func (ring *KeyRing) AddUnverified(msg KeyExchangeMessage) {
+	ring.mutex.Lock()
+	defer ring.mutex.Unlock()
+	ring.pending.PushBack(msg)
+}
+
+// Add updates the key ring with the given (verified) keyrecord and origin of the signature
+// It assumes that the record's signature has been verified
+func (ring *KeyRing) Add(rec KeyRecord, sigOrigin string, reputationOwner float32) {
+	// do not update if the signer is unknown
+	if !ring.contains(sigOrigin) {
+		return
+	}
+
+	if rec.Owner == sigOrigin {
+		// self signed record
+		return
+	}
+
+	// add owner of the key if not yet known, or update its probability
+	ring.addNode(rec.Owner, 0.0)
+
+	// add edge
+	err := ring.addEdge(sigOrigin, rec.Owner, rec.KeyPub)
+
+	if err != nil {
+		log.Fatal("KeyRing Add : could not add edge")
+	}
+
+	// recompute its probability
+	probability := ring.phi(rec.Owner, reputationOwner)
+
+	// update probability
+	ring.addNode(rec.Owner, probability)
+
+	// save key with "unknown" confidence, that will be computed after
+	// ring.keyTable.add(TrustedKeyRecord{
+	// 	Record:     rec,
+	// 	Confidence: float32(0.0),
+	// })
+
+	// // recompute the confidence of the keys
+	ring.updateConfidence()
 }
 
 ////////// Key Ring Implementation
@@ -425,6 +425,11 @@ func (ring KeyRing) phi(name string, reputation float32) float32 {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
 
+	if ring.ids[name] == nil {
+		// probability of non existing node is 0
+		return 0.0
+	}
+
 	// phi = min(1/d, rep)
 
 	destNode := ring.graph.Node(ring.ids[name].id)
@@ -487,7 +492,7 @@ func (ring *KeyRing) addNode(name string, probability float32) {
 	return
 }
 
-// addEdge adds a directed edge from node named a to node named b, given the public key associated with the signature from a of b's key
+// addEdge adds a directed edge from node named a to node named b, given the public key associated with the signature from a of b's key (that is the supposed key of a)
 func (ring *KeyRing) addEdge(a, b string, key rsa.PublicKey) error {
 	ring.mutex.Lock()
 	defer ring.mutex.Unlock()
@@ -498,7 +503,7 @@ func (ring *KeyRing) addEdge(a, b string, key rsa.PublicKey) error {
 	}
 
 	if _, bPresent := ring.ids[b]; !bPresent {
-		// a is not present
+		// b is not present
 		return errors.New("adding edge with destination non present")
 	}
 
