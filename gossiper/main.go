@@ -37,7 +37,13 @@ func main() {
 	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
 	keysdir := flag.String("keys", ".", "directory for boostrap public keys")
 	confidenceThreshold := flag.Float64("cthresh", 0.20, "confidence threshold for collected public keys")
+
+	// Program execution log mode
+	logMode := flag.String("logs", common.LOG_MODE_REACTIVE, "execution log mode")
+
 	flag.Parse()
+
+	common.InitLogger(*logMode)
 
 	fmt.Println("given peers :", *peers)
 

@@ -18,25 +18,25 @@ import (
 
 // Gossiper implementation
 type Gossiper struct {
-	Parameters          Parameters   // some parameters
-	gossipOutputQueue   chan *Packet // sending queue to gossip connection
-	ClientAddress       *net.UDPAddr // client address
-	clientOutputQueue   chan *common.Packet
-	peerSet             common.PeerSet              // set of peers
-	vectorClock         StatusPacket                // current state of received messages
-	messages            Messages                    // set of received messages
-	gossiperWaiters     map[string]chan *PeerStatus // goroutines waiting for an ack
-	waitersMutex        *sync.Mutex
-	fileWaiters         map[string]chan *DataReply // goroutines waiting for a data reply
-	fileWaitersMutex    *sync.Mutex
-	standardOutputQueue chan *string            // output queue for the standard output
-	routingTable        RoutingTable            // routing table
-	metadataSet         MetadataSet             // file metadatas
-	FileDownloads       FileDownloads           // file downloads : file that are being downloaded
-	key                 rsa.PrivateKey          // private key / public key of this gossiper
-	reputationTable     rep.ReputationTable     // Reputation table
-	trustedKeys         []awot.TrustedKeyRecord // fully trusted keys, bootstrap of awot
-	keyRing             awot.KeyRing            // key ring of awot
+	Parameters        Parameters   // some parameters
+	gossipOutputQueue chan *Packet // sending queue to gossip connection
+	ClientAddress     *net.UDPAddr // client address
+	clientOutputQueue chan *common.Packet
+	peerSet           common.PeerSet              // set of peers
+	vectorClock       StatusPacket                // current state of received messages
+	messages          Messages                    // set of received messages
+	gossiperWaiters   map[string]chan *PeerStatus // goroutines waiting for an ack
+	waitersMutex      *sync.Mutex
+	fileWaiters       map[string]chan *DataReply // goroutines waiting for a data reply
+	fileWaitersMutex  *sync.Mutex
+	// 	standardOutputQueue chan *string            // output queue for the standard output
+	routingTable    RoutingTable            // routing table
+	metadataSet     MetadataSet             // file metadatas
+	FileDownloads   FileDownloads           // file downloads : file that are being downloaded
+	key             rsa.PrivateKey          // private key / public key of this gossiper
+	reputationTable rep.ReputationTable     // Reputation table
+	trustedKeys     []awot.TrustedKeyRecord // fully trusted keys, bootstrap of awot
+	keyRing         awot.KeyRing            // key ring of awot
 }
 
 // Create a new Gossiper
@@ -49,25 +49,25 @@ func NewGossiper(parameters Parameters, peerAddrs []net.UDPAddr) *Gossiper {
 	trustedKeys := getPublicKeysFromDirectory(parameters.TrustedKeysDirectory, parameters.Identifier)
 	reptable := *rep.NewReputationTable(&peerSet)
 	gossiper := Gossiper{
-		Parameters:          parameters,
-		gossipOutputQueue:   make(chan *Packet, channelSize),
-		clientOutputQueue:   make(chan *common.Packet, channelSize),
-		ClientAddress:       nil,
-		peerSet:             peerSet,
-		vectorClock:         *NewStatusPacket(peerSet.ToPeerArray(), parameters.Identifier),
-		messages:            Messages{make(map[string]map[uint32]RumorMessage), &sync.Mutex{}},
-		gossiperWaiters:     make(map[string]chan *PeerStatus, channelSize),
-		waitersMutex:        &sync.Mutex{},
-		fileWaiters:         make(map[string]chan *DataReply),
-		fileWaitersMutex:    &sync.Mutex{},
-		standardOutputQueue: make(chan *string, channelSize),
-		routingTable:        *NewRoutingTable(parameters.Identifier, UDPAddrToString(parameters.GossipAddr)),
-		metadataSet:         metadataSet,
-		FileDownloads:       *NewFileDownloads(),
-		key:                 key,
-		reputationTable:     reptable,
-		trustedKeys:         trustedKeys,
-		keyRing:             awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys, parameters.KeyConfidenceThreshold),
+		Parameters:        parameters,
+		gossipOutputQueue: make(chan *Packet, channelSize),
+		clientOutputQueue: make(chan *common.Packet, channelSize),
+		ClientAddress:     nil,
+		peerSet:           peerSet,
+		vectorClock:       *NewStatusPacket(peerSet.ToPeerArray(), parameters.Identifier),
+		messages:          Messages{make(map[string]map[uint32]RumorMessage), &sync.Mutex{}},
+		gossiperWaiters:   make(map[string]chan *PeerStatus, channelSize),
+		waitersMutex:      &sync.Mutex{},
+		fileWaiters:       make(map[string]chan *DataReply),
+		fileWaitersMutex:  &sync.Mutex{},
+		// standardOutputQueue: make(chan *string, channelSize),
+		routingTable:    *NewRoutingTable(parameters.Identifier, UDPAddrToString(parameters.GossipAddr)),
+		metadataSet:     metadataSet,
+		FileDownloads:   *NewFileDownloads(),
+		key:             key,
+		reputationTable: reptable,
+		trustedKeys:     trustedKeys,
+		keyRing:         awot.NewKeyRing(parameters.Identifier, key.PublicKey, trustedKeys, parameters.KeyConfidenceThreshold),
 	}
 	gossiper.keyRing.StartWithReputation(time.Duration(5)*time.Second, &reptable)
 	return &gossiper
@@ -79,11 +79,6 @@ func (g *Gossiper) Start() {
 	var wg sync.WaitGroup
 	wg.Add(8)
 
-	// Standard output writer Thread
-	go func() {
-		defer wg.Done()
-		fmtwriter(g.standardOutputQueue)
-	}()
 	// Client Listener Thread
 	go func() {
 		defer wg.Done()
@@ -124,10 +119,10 @@ func (g *Gossiper) Start() {
 	}()
 
 	// Reputation Logs Thread
-	go func() {
+	/*go func() {
 		defer wg.Done()
 		repLogs(g)
-	}()
+	}()*/
 
 	fmt.Println("INITIALIZATION DONE")
 

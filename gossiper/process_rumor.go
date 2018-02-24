@@ -37,8 +37,14 @@ func (g *Gossiper) processRumor(rumor *RumorMessage, remoteaddr *net.UDPAddr) {
 	rumor.LastPort = &(remoteaddr.Port)
 
 	// printing
-	g.standardOutputQueue <- g.peerSet.PeersListString()
-	g.standardOutputQueue <- rumor.RumorString(remoteaddr)
+	var targetLogMode string
+	if rumor.Text == "" {
+		targetLogMode = common.LOG_MODE_FULL
+	} else {
+		targetLogMode = common.LOG_MODE_REACTIVE
+	}
+	common.Log(*g.peerSet.PeersListString(), common.LOG_MODE_FULL)
+	common.Log(*rumor.RumorString(remoteaddr), targetLogMode)
 
 	if g.messages.Contains(rumor) {
 		if g.Parameters.NatTraversal {

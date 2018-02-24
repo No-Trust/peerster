@@ -22,9 +22,8 @@ func repUpdateRequests(g *Gossiper, reptimer uint) {
 
 	for range ticker.C {
 
-		log := "Sending reputation update requests to most reputable peers..."
-
-		g.standardOutputQueue <- &log
+		common.Log("Sending reputation update requests to most reputable peers...",
+			common.LOG_MODE_FULL)
 
 		highestRepTable := g.reputationTable.MostReputablePeers(rep.REP_REQ_PEER_COUNT)
 
@@ -75,8 +74,8 @@ func repLogs(g *Gossiper) {
 
 func (g *Gossiper) processContribRepUpdateReq(sender *common.Peer) {
 
-	log := "SENDING CONTRIB-REP UPDATE TO " + addrToString(sender.Address)
-	g.standardOutputQueue <- &log
+	common.Log("SENDING CONTRIB-REP UPDATE TO "+addrToString(sender.Address),
+		common.LOG_MODE_FULL)
 
 	g.gossipOutputQueue <- &Packet{
 		GossipPacket: GossipPacket{
@@ -89,12 +88,9 @@ func (g *Gossiper) processContribRepUpdateReq(sender *common.Peer) {
 
 func (g *Gossiper) processContribRepUpdate(update *rep.RepUpdate, sender *common.Peer) {
 
-	log := "RECEIVED CONTRIB-REP UPDATE FROM " + addrToString(sender.Address) + "\nPRINTING OLD REPS AND NEW REPS"
-	g.standardOutputQueue <- &log
-	g.reputationTable.Log()
+	common.Log("RECEIVED CONTRIB-REP UPDATE FROM "+addrToString(sender.Address),
+		common.LOG_MODE_FULL)
 
 	g.reputationTable.UpdateReputations(update, addrToString(sender.Address))
-
-	g.reputationTable.Log()
 
 }

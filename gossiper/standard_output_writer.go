@@ -8,14 +8,6 @@ import (
 	"strconv"
 )
 
-func fmtwriter(queue chan *string) {
-	// writer for the standard output
-	// write every string on queue
-	for str := range queue {
-		fmt.Println(*str)
-	}
-}
-
 // Strings for messages
 
 func DirectRouteString(origin string, remoteaddr *net.UDPAddr) *string {
@@ -69,13 +61,13 @@ func SyncString(peer *net.UDPAddr) *string {
 	return &str
 }
 
-func (msg *StatusPacket) AntiEntropyString(peer *net.UDPAddr) *string {
+func (msg *StatusPacket) AntiEntropyString(peer *net.UDPAddr) string {
 	origins := ""
 	for _, peerstatus := range msg.Want {
 		origins += fmt.Sprintf(" origin %s nextID %d", peerstatus.Identifier, peerstatus.NextID)
 	}
-	str := fmt.Sprintf("ANTI ENTROPY STATUS to %s:%s %s", peer.IP.String(), strconv.Itoa(peer.Port), origins)
-	return &str
+	return fmt.Sprintf("ANTI ENTROPY STATUS to %s:%s %s",
+		peer.IP.String(), strconv.Itoa(peer.Port), origins)
 }
 
 func (pm *PrivateMessage) PrivateMessageString(source *net.UDPAddr) *string {
@@ -102,73 +94,69 @@ func FileSubmissionDone(metahash []byte) *string {
 
 ///// Authentic File Download
 
-func FileWrongSigMetaUploader(uploader string) *string {
+func FileWrongSigMetaUploader(uploader string) string {
 	str := fmt.Sprintf("WRONG Signature of Metadata by uploader %s \n", uploader)
 	str += fmt.Sprintf("WARNING identity of uploader %s cannot be certified", uploader)
-	return &str
+	return str
 }
 
-func FileGoodSigMetaUploader(uploader string) *string {
-	str := fmt.Sprintf("GOOD Signature of Metadata by uploader %s", uploader)
-	return &str
+func FileGoodSigMetaUploader(uploader string) string {
+	return fmt.Sprintf("GOOD Signature of Metadata by uploader %s", uploader)
 }
 
-func FileWrongSigUploader(uploader string) *string {
+func FileWrongSigUploader(uploader string) string {
 	str := fmt.Sprintf("WRONG Signature of File by uploader %s \n", uploader)
 	str += fmt.Sprintf("WARNING identity of uploader %s cannot be certified", uploader)
-	return &str
+	return str
 }
 
-func FileGoodSigUploader(uploader string) *string {
-	str := fmt.Sprintf("GOOD Signature of File by uploader %s", uploader)
-	return &str
+func FileGoodSigUploader(uploader string) string {
+	return fmt.Sprintf("GOOD Signature of File by uploader %s", uploader)
 }
 
-func FileWrongSigOrigin(origin string) *string {
+func FileWrongSigOrigin(origin string) string {
 	str := fmt.Sprintf("WRONG Signature of File by Origin %s \n", origin)
 	str += fmt.Sprintf("WARNING received file from uncertain origin \n")
 	str += fmt.Sprintf("DROPPING file\n")
-	return &str
+	return str
 }
 
-func FileGoodSigOrigin(origin string) *string {
-	str := fmt.Sprintf("GOOD Signature of File by origin %s", origin)
-	return &str
+func FileGoodSigOrigin(origin string) string {
+	return fmt.Sprintf("GOOD Signature of File by origin %s", origin)
 }
 
-func FileGoodOrigin(origin string) *string {
-	str := fmt.Sprintf("RECEIVED FILE origin %s certified", origin)
-	return &str
+func FileGoodOrigin(origin string) string {
+	return fmt.Sprintf("RECEIVED FILE origin %s certified", origin)
 }
 
-func FileWarningUnverifiedOrigin() *string {
-	str := fmt.Sprintf("WARNING RECEIVED FILE unverified origin")
-	return &str
+func FileWarningUnverifiedOrigin() string {
+	return fmt.Sprintf("WARNING RECEIVED FILE unverified origin")
 }
 
-func FileErrorUnverifiedOrigin(origin string) *string {
-	str := fmt.Sprintf("ERROR RECEIVED FILE unverified origin %s", origin)
-	return &str
+func FileErrorUnverifiedOrigin(origin string) string {
+	return fmt.Sprintf("ERROR RECEIVED FILE unverified origin %s", origin)
 }
 
 ///// Key Exchange
 
-func KeyExchangeSendString(owner string, dest net.UDPAddr) *string {
-	str := fmt.Sprintf("KEY EXCHANGE MESSAGE SENT owner %s to %s:%s", owner, dest.IP.String(), strconv.Itoa(dest.Port))
-	return &str
+func KeyExchangeSignString(owner string, sig []byte) string {
+	return fmt.Sprintf("SIGNING for %s with sig : \n%s", owner, hex.EncodeToString(sig))
 }
 
-func KeyExchangeReceiveString(owner string, from net.UDPAddr, valid bool) *string {
+func KeyExchangeSendString(owner string, dest net.UDPAddr) string {
+	return fmt.Sprintf("KEY EXCHANGE MESSAGE SENT owner %s to %s:%s",
+		owner, dest.IP.String(), strconv.Itoa(dest.Port))
+}
+
+func KeyExchangeReceiveString(owner string, from net.UDPAddr, valid bool) string {
 	str := fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s from %s:%s", owner, from.IP.String(), strconv.Itoa(from.Port))
 	if valid {
 		str += " VALID"
 	} else {
 		str += " INVALID"
 	}
-	return &str
+	return str
 }
-func KeyExchangeReceiveUnverifiedString(owner string, signer string, from net.UDPAddr) *string {
-	str := fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s signed by %s from %s:%s", owner, signer, from.IP.String(), strconv.Itoa(from.Port))
-	str += " UNVERIFIED"
-	return &str
+func KeyExchangeReceiveUnverifiedString(owner, signer string, from net.UDPAddr) string {
+	return fmt.Sprintf("KEY EXCHANGE MESSAGE RECEIVED owner %s signed by %s from %s:%s UNVERIFIED", owner, signer, from.IP.String(), strconv.Itoa(from.Port))
 }

@@ -2,14 +2,15 @@
 package main
 
 import (
-	"github.com/No-Trust/peerster/common"
 	"time"
+
+	"github.com/No-Trust/peerster/common"
 )
 
 // Implementation of the rumormongering algorithm.
 // Send a rumor to destination and continue with a random peer with probability 1/2
 func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
-	g.standardOutputQueue <- rumor.MongeringString(destPeer.Address)
+	common.Log(*rumor.MongeringString(destPeer.Address), common.LOG_MODE_FULL)
 	// send rumor to peer
 
 	g.gossipOutputQueue <- &Packet{
@@ -82,7 +83,7 @@ func (g *Gossiper) rumormonger(rumor *RumorMessage, destPeer *common.Peer) {
 			g.waitersMutex.Unlock()
 			// rumormonger again with probability 1/2
 			if flipCoin() {
-				g.standardOutputQueue <- CoinFlipString(&destPeer.Address)
+				common.Log(*CoinFlipString(&destPeer.Address), common.LOG_MODE_FULL)
 
 				randPeer := g.reputationTable.ContribRandomPeer()
 

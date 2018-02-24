@@ -21,14 +21,14 @@ func processNewNode(nnode *common.NewNode, g *Gossiper) {
 	newPeer := nnode.NewPeer
 	// add the new peer the the peerset
 	g.peerSet.Add(newPeer)
-	g.standardOutputQueue <- g.peerSet.PeersListString()
+	common.Log(*g.peerSet.PeersListString(), common.LOG_MODE_FULL)
 }
 
 // New Message : a message has been sent by the user
 func processNewMessage(msg *common.NewMessage, g *Gossiper, remoteaddr *net.UDPAddr) {
 	// new message
-	g.standardOutputQueue <- msg.ClientNewMessageString()
-	g.standardOutputQueue <- g.peerSet.PeersListString()
+	common.Log(*msg.ClientNewMessageString(), common.LOG_MODE_REACTIVE)
+	common.Log(*g.peerSet.PeersListString(), common.LOG_MODE_FULL)
 
 	nextSeq := g.vectorClock.Get(g.Parameters.Identifier)
 
@@ -69,7 +69,7 @@ func processNewMessage(msg *common.NewMessage, g *Gossiper, remoteaddr *net.UDPA
 // New Private Message : a private message has been sent by the user
 func processNewPrivateMessage(pcm *common.NewPrivateMessage, g *Gossiper) {
 	// new private message
-	g.standardOutputQueue <- pcm.ClientNewPrivateMessageString()
+	common.Log(*pcm.ClientNewPrivateMessageString(), common.LOG_MODE_REACTIVE)
 
 	// encrypt text with receiver's public key
 	rpub, pres := g.keyRing.GetKey(pcm.Dest)
@@ -94,7 +94,7 @@ func processNewPrivateMessage(pcm *common.NewPrivateMessage, g *Gossiper) {
 	// check if this peer is the destination
 	if pm.Dest == g.Parameters.Identifier {
 		// this node is the destination
-		g.standardOutputQueue <- pm.PrivateMessageString(&g.Parameters.GossipAddr)
+		common.Log(*pm.PrivateMessageString(&g.Parameters.GossipAddr), common.LOG_MODE_REACTIVE)
 		// send the message to the client
 		g.clientOutputQueue <- &common.Packet{
 			ClientPacket: common.ClientPacket{
@@ -182,7 +182,7 @@ func processRequestUpdate(req *bool, g *Gossiper, remoteaddr *net.UDPAddr) {
 // New file : the client sends a new file to be indexed
 func processNewFile(newfile *common.NewFile, g *Gossiper) {
 
-	g.standardOutputQueue <- newfile.ClientNewFileString()
+	common.Log(*newfile.ClientNewFileString(), common.LOG_MODE_REACTIVE)
 
 	filename := filepath.Base(newfile.Path)
 
@@ -239,12 +239,12 @@ func processNewFile(newfile *common.NewFile, g *Gossiper) {
 	// store chunks to disk
 	writeChunksToDisk(*chunks, g.Parameters.ChunksDirectory, filename)
 
-	g.standardOutputQueue <- FileSubmissionDone(metahash)
+	common.Log(*FileSubmissionDone(metahash), common.LOG_MODE_REACTIVE)
 }
 
 // File request : the client requests a file to be downloaded
 func processFileRequest(filereq *common.FileRequest, g *Gossiper) {
-	g.standardOutputQueue <- filereq.ClientNewFileRequestString()
+	common.Log(*filereq.ClientNewFileRequestString(), common.LOG_MODE_REACTIVE)
 
 	req := DataRequest{
 		Origin:      g.Parameters.Identifier,
@@ -260,7 +260,7 @@ func processFileRequest(filereq *common.FileRequest, g *Gossiper) {
 		// The client is sending a request for a file on the gossiper it is attached to
 		// If the gossiper has the file, then no need to send request to someone else
 		// If the gossiper does not have the file, then TODO
-		g.standardOutputQueue <- req.DataRequestString(&g.Parameters.GossipAddr)
+		common.Log(*req.DataRequestString(&g.Parameters.GossipAddr), common.LOG_MODE_REACTIVE)
 
 		return
 	}
@@ -276,14 +276,14 @@ func processFileRequest(filereq *common.FileRequest, g *Gossiper) {
 				// file exists
 				fmt.Println("METADATA : ", *metadata)
 				fmt.Println("name : ", metadata.Name)
-				g.standardOutputQueue <- filereq.Gossi	perAlreadyHasFileString()
+				common.Log(filereq.GossiperAlreadyHasFileString(), common.LOG_MODE_REACTIVE)
 				return
 			}
 
 			// data, err := ioutil.ReadFile(filepath)
 			// if err == nil && data != nil {
 			// 	// this peer already has the file
-			// 	g.standardOutputQueue <- filereq.GossiperAlreadyHasFileString()
+			// 	common.Log(filereq.GossiperAlreadyHasFileString(), common.LOG_MODE_REACTIVE)
 			// 	return
 			// }
 		}

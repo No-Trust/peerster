@@ -3,6 +3,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/No-Trust/peerster/common"
 )
 
 // Implementation of the anti entropy algorithm.
@@ -22,7 +24,7 @@ func antiEntropy(g *Gossiper, etimer uint) {
 			addr := stringToUDPAddr(randPeer)
 
 			status := g.vectorClock.Copy()
-			g.standardOutputQueue <- status.AntiEntropyString(&addr)
+			common.Log(status.AntiEntropyString(&addr), common.LOG_MODE_FULL)
 
 			g.gossipOutputQueue <- &Packet{
 				GossipPacket: GossipPacket{

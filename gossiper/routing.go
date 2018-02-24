@@ -130,7 +130,7 @@ func (rumor *RumorMessage) broadcastTo(g *Gossiper, ps common.PeerSet) {
 	// broadcast the route message to all given peers
 	peers := ps.ToPeerArray()
 	for _, peer := range peers {
-		g.standardOutputQueue <- rumor.MongeringString(peer.Address)
+		common.Log(*rumor.MongeringString(peer.Address), common.LOG_MODE_FULL)
 		g.gossipOutputQueue <- &Packet{
 			GossipPacket: GossipPacket{
 				Rumor: rumor,
@@ -154,7 +154,7 @@ func broadcastNewRoute(g *Gossiper) {
 			Text:   "",
 		}
 
-		g.standardOutputQueue <- routerumor.MongeringString(peer.Address)
+		common.Log(*routerumor.MongeringString(peer.Address), common.LOG_MODE_FULL)
 
 		// update status vector
 		g.vectorClock.Update(g.Parameters.Identifier)

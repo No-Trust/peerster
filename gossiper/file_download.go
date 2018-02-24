@@ -6,11 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"github.com/No-Trust/peerster/common"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/No-Trust/peerster/common"
 )
 
 /***** File Download *****/
@@ -146,7 +147,7 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 			Destination: *g.ClientAddress,
 		}
 		// print same notification
-		g.standardOutputQueue <- notification
+		common.Log(*notification, common.LOG_MODE_REACTIVE)
 
 		// and wait for data reply
 		metaReplyChannel := make(chan *DataReply)
@@ -233,10 +234,10 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 						// verify against SigMetaUploader
 						err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metachashed, SigMetaUploader, nil)
 						if err != nil {
-							g.standardOutputQueue <- FileWrongSigMetaUploader(filereq.Destination)
+							common.Log(FileWrongSigMetaUploader(filereq.Destination), common.LOG_MODE_REACTIVE)
 							verifiedUploader = false
 						} else {
-							g.standardOutputQueue <- FileGoodSigMetaUploader(filereq.Destination)
+							common.Log(FileGoodSigMetaUploader(filereq.Destination), common.LOG_MODE_REACTIVE)
 						}
 					} else {
 						// no signatures, uploader cannot be verified
@@ -325,7 +326,7 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 			Destination: *g.ClientAddress,
 		}
 		// print same notification
-		g.standardOutputQueue <- notification
+		common.Log(*notification, common.LOG_MODE_FULL)
 
 		// and wait for data reply
 		dataReplyChannel := make(chan *DataReply)
@@ -416,10 +417,10 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 	if verifiedUploader {
 		err := rsa.VerifyPSS(&uploaderKey, crypto.SHA256, metahash, *sigUploader, nil)
 		if err != nil {
-			g.standardOutputQueue <- FileWrongSigUploader(filereq.Destination)
+			common.Log(FileWrongSigUploader(filereq.Destination), common.LOG_MODE_REACTIVE)
 			verifiedUploader = false
 		} else {
-			g.standardOutputQueue <- FileGoodSigUploader(filereq.Destination)
+			common.Log(FileGoodSigUploader(filereq.Destination), common.LOG_MODE_REACTIVE)
 		}
 	}
 	// check sigOrigin
@@ -433,10 +434,10 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 		} else {
 			err := rsa.VerifyPSS(&originKey, crypto.SHA256, metahash, *sigOrigin, nil)
 			if err != nil {
-				g.standardOutputQueue <- FileWrongSigOrigin(*filereq.Origin)
+				common.Log(FileWrongSigOrigin(*filereq.Origin), common.LOG_MODE_REACTIVE)
 				validOriginSignature = false
 			} else {
-				g.standardOutputQueue <- FileGoodSigOrigin(*filereq.Origin)
+				common.Log(FileGoodSigOrigin(*filereq.Origin), common.LOG_MODE_REACTIVE)
 			}
 		}
 	} else {
@@ -463,13 +464,13 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 
 	if validOriginSignature {
 		// the file itself is fine
-		g.standardOutputQueue <- FileGoodOrigin(*filereq.Origin)
+		common.Log(FileGoodOrigin(*filereq.Origin), common.LOG_MODE_REACTIVE)
 	} else if filereq.Origin == nil {
 		// did not ask for origin check
-		g.standardOutputQueue <- FileWarningUnverifiedOrigin()
+		common.Log(FileWarningUnverifiedOrigin(), common.LOG_MODE_REACTIVE)
 	} else {
 		// the origin of the file cannot be certified
-		g.standardOutputQueue <- FileErrorUnverifiedOrigin(*filereq.Origin)
+		common.Log(FileErrorUnverifiedOrigin(*filereq.Origin), common.LOG_MODE_REACTIVE)
 		// drop the file
 		g.FileDownloads.Remove(&download)
 		return
@@ -490,7 +491,7 @@ func startDownload(g *Gossiper, filereq *common.FileRequest) {
 		Destination: *g.ClientAddress,
 	}
 	// print same notification
-	g.standardOutputQueue <- notification
+	common.Log(*notification, common.LOG_MODE_REACTIVE)
 
 	// store chunks in disk
 	writeChunksToDisk(download.Chunks, g.Parameters.ChunksDirectory, filereq.FileName)

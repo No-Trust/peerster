@@ -2,9 +2,10 @@
 package main
 
 import (
-	"fmt"
-	"github.com/No-Trust/peerster/awot"
 	"net"
+
+	"github.com/No-Trust/peerster/awot"
+	"github.com/No-Trust/peerster/common"
 )
 
 // Procedure for inbound KeyExchangeMessage
@@ -34,14 +35,16 @@ func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, repOw
 	if !present {
 		// received a key record from a peer with no corresponding public key in memory
 		// add the message to the pending list, it may be useful after getting the key
-		g.standardOutputQueue <- KeyExchangeReceiveUnverifiedString(record.Owner, msg.Origin, *remoteaddr)
+		common.Log(KeyExchangeReceiveUnverifiedString(record.Owner, msg.Origin, *remoteaddr),
+			common.LOG_MODE_REACTIVE)
 		g.keyRing.AddUnverified(*msg)
 		return
 	}
 
 	// check validity of signature
 	err = awot.Verify(*msg, kpub)
-	g.standardOutputQueue <- KeyExchangeReceiveString(record.Owner, *remoteaddr, err == nil)
+	common.Log(KeyExchangeReceiveString(record.Owner, *remoteaddr, err == nil),
+		common.LOG_MODE_REACTIVE)
 
 	if err != nil {
 		// signature does not correspond
@@ -69,7 +72,7 @@ func (g *Gossiper) processKeyExchangeMessage(msg *awot.KeyExchangeMessage, repOw
 // Send a fresh key record to a random neighbor as a rumor message
 func sendCertificate(g *Gossiper, rec awot.TrustedKeyRecord) {
 	msg := rec.ConstructMessage(g.key, g.Parameters.Identifier)
-	fmt.Println("SIGNING for", msg.Owner, "with sig : \n", msg.Signature)
+	common.Log(KeyExchangeSignString(msg.Owner, msg.Signature), common.LOG_MODE_REACTIVE)
 
 	nextSeq := g.vectorClock.Get(g.Parameters.Identifier)
 
@@ -90,7 +93,7 @@ func sendCertificate(g *Gossiper, rec awot.TrustedKeyRecord) {
 	// and send the rumor
 	destPeer := g.peerSet.RandomPeer()
 	if destPeer != nil {
-		g.standardOutputQueue <- KeyExchangeSendString(msg.Owner, destPeer.Address)
+		common.Log(KeyExchangeSendString(msg.Owner, destPeer.Address), common.LOG_MODE_FULL)
 		go g.rumormonger(&rumor, destPeer)
 	}
 }

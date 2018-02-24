@@ -13,8 +13,8 @@ func (g *Gossiper) processStatus(status *StatusPacket, remoteaddr *net.UDPAddr) 
 	// process an inbound status
 
 	// printing
-	g.standardOutputQueue <- g.peerSet.PeersListString()
-	g.standardOutputQueue <- status.StatusString(remoteaddr)
+	common.Log(*g.peerSet.PeersListString(), common.LOG_MODE_FULL)
+	common.Log(*status.StatusString(remoteaddr), common.LOG_MODE_FULL)
 
 	A := common.Peer{Address: *remoteaddr, Identifier: ""} // A is the relay peer
 
@@ -101,14 +101,14 @@ func (g *Gossiper) compareStateAndProcess(rumor *RumorMessage, status *StatusPac
 	}
 
 	if sameState {
-		g.standardOutputQueue <- SyncString(&destPeer.Address)
+		common.Log(*SyncString(&destPeer.Address), common.LOG_MODE_FULL)
 	}
 
 	if !g.Parameters.NoForward && sameState && rumor != nil {
 		// same state for this origin
 		// continue with probability 1/2, if allowed
 		if flipCoin() {
-			g.standardOutputQueue <- CoinFlipString(&destPeer.Address)
+			common.Log(*CoinFlipString(&destPeer.Address), common.LOG_MODE_FULL)
 			// continue
 
 			randPeer := g.reputationTable.ContribRandomPeer()

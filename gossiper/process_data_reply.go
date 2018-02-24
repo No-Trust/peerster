@@ -3,6 +3,8 @@ package main
 
 import (
 	"net"
+
+	"github.com/No-Trust/peerster/common"
 )
 
 // Handler for inbound data reply
@@ -11,7 +13,7 @@ func (g *Gossiper) processDataReply(reply *DataReply, remoteaddr *net.UDPAddr) {
 
 	if reply.Destination == g.Parameters.Identifier {
 
-		g.standardOutputQueue <- reply.DataReplyString()
+		common.Log(*reply.DataReplyString(), common.LOG_MODE_REACTIVE)
 
 		dataReplyString := string(reply.HashValue)
 
