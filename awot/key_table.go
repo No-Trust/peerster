@@ -25,7 +25,7 @@ func (table keyTable) getPeerList() []string {
 // add adds a record to the key table, overwrites it if it already exists
 func (table *keyTable) add(rec TrustedKeyRecord) {
 	table.mutex.Lock()
-	table.db[rec.Record.Owner] = rec
+	table.db[rec.Owner] = rec
 	table.mutex.Unlock()
 }
 
@@ -48,7 +48,7 @@ func newEmptyKeyTable() keyTable {
 func newKeyTable(owner string, key rsa.PublicKey) keyTable {
 	table := newEmptyKeyTable()
 	table.add(TrustedKeyRecord{
-		Record: KeyRecord{
+		KeyRecord: KeyRecord{
 			Owner:  owner,
 			KeyPub: key,
 		},
@@ -74,13 +74,13 @@ func (table *keyTable) updateConfidence(name string, confidence float32, key *rs
 	r, present := table.db[name]
 	if present {
 		if key != nil {
-			r.Record.KeyPub = *key
+			r.KeyPub = *key
 		}
 		r.Confidence = confidence
 		table.db[name] = r
 	} else if key != nil {
 		table.db[name] = TrustedKeyRecord{
-			Record: KeyRecord{
+			KeyRecord: KeyRecord{
 				Owner:  name,
 				KeyPub: *key,
 			},
@@ -93,7 +93,7 @@ func (table *keyTable) updateConfidence(name string, confidence float32, key *rs
 // getKey returns the key of peer with given name and true if it exists, otherwise return false
 func (table keyTable) getKey(name string) (rsa.PublicKey, bool) {
 	rec, present := table.get(name)
-	return rec.Record.KeyPub, present
+	return rec.KeyPub, present
 }
 
 // getFullyTrustedKeys retrieves the keys with a confidence level of 100%

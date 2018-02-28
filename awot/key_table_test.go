@@ -30,7 +30,7 @@ func TestSigningExchangeMessage(t *testing.T) {
 	}
 
 	r1 := TrustedKeyRecord{
-		Record: KeyRecord{
+		KeyRecord: KeyRecord{
 			Owner:  "node1",
 			KeyPub: r1K.PublicKey,
 		},
@@ -74,7 +74,7 @@ func TestKeyTable(t *testing.T) {
 	r3K := r1K
 
 	r1 := TrustedKeyRecord{
-		Record: KeyRecord{
+		KeyRecord: KeyRecord{
 			Owner:  "node1",
 			KeyPub: r1K.PublicKey,
 		},
@@ -82,7 +82,7 @@ func TestKeyTable(t *testing.T) {
 	}
 
 	r2 := TrustedKeyRecord{
-		Record: KeyRecord{
+		KeyRecord: KeyRecord{
 			Owner:  "node2",
 			KeyPub: r2K.PublicKey,
 		},
@@ -151,7 +151,7 @@ func TestKeyTable(t *testing.T) {
 		t.Errorf("incorrect public key : public key has not been updated with updateConfidence()")
 	}
 
-	table.remove(r1.Record.Owner)
+	table.remove(r1.Owner)
 
 	_, present = table.getKey("node1")
 

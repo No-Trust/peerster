@@ -51,7 +51,7 @@ type KeyRing struct {
 	ids          map[string]*Node     // name -> Node mapping
 	graph        simple.DirectedGraph // graph
 	nextNode     int64                // for instanciating new nodes
-	keyTable     keyTable             // for updates
+	keyTable                          // for updates
 	pending      *list.List           // pending KeyExchangeMessage
 	pendingMutex *sync.Mutex          // mutex for pending KeyExchangeMessage
 	mutex        *sync.Mutex          // mutex for the keyring itself
@@ -91,7 +91,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 	ids[owner] = &source
 	// add key
 	keyTable.add(TrustedKeyRecord{
-		Record: KeyRecord{
+		KeyRecord: KeyRecord{
 			Owner:  owner,
 			KeyPub: key,
 		},
@@ -103,14 +103,14 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		// add node to graph
 		p := float32(1.0)
 		node := Node{
-			name:        rec.Record.Owner,
+			name:        rec.KeyRecord.Owner,
 			id:          nextNode,
 			probability: &p,
 		}
 		nextNode += 1
 		graph.AddNode(node)
 		// set id and name association in map
-		ids[rec.Record.Owner] = &node
+		ids[rec.Owner] = &node
 
 		// add edge from source to new node
 
@@ -118,15 +118,15 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		edge := Edge{
 			F:   source,
 			T:   node,
-			Key: rec.Record.KeyPub,
+			Key: rec.KeyPub,
 		}
 		graph.SetEdge(edge)
 
 		// add key
 		keyTable.add(TrustedKeyRecord{
-			Record: KeyRecord{
-				Owner:  rec.Record.Owner,
-				KeyPub: rec.Record.KeyPub,
+			KeyRecord: KeyRecord{
+				Owner:  rec.Owner,
+				KeyPub: rec.KeyPub,
 			},
 			Confidence: rec.Confidence,
 		})
@@ -166,14 +166,14 @@ func (ring *KeyRing) StartWithReputation(rate time.Duration, reptable Reputation
 func (ring KeyRing) GetKey(name string) (rsa.PublicKey, bool) {
 	rec, ok := ring.keyTable.get(name)
 	if !ok {
-		return rec.Record.KeyPub, ok
+		return rec.KeyPub, ok
 	}
 
 	if rec.Confidence < ring.threshold {
 		return rsa.PublicKey{}, false
 	}
 
-	return rec.Record.KeyPub, ok
+	return rec.KeyPub, ok
 }
 
 // GetRecord returns the record of peer with given name and true if it exists, otherwise returns false.

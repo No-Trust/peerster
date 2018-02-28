@@ -17,7 +17,7 @@ type KeyRecord struct {
 
 // A TrustedKeyRecord is a KeyRecord with a confidence level corresponding to the trust put in the KeyRecord
 type TrustedKeyRecord struct {
-	Record             KeyRecord           // the record publik key - owner
+	KeyRecord                              // the record publik key - owner
 	Confidence         float32             // confidence level in the assocatiation owner - public key
 	keyExchangeMessage *KeyExchangeMessage // the key exchange message to be advertised in the future
 }
@@ -37,9 +37,9 @@ func (rec *TrustedKeyRecord) ConstructMessage(priK rsa.PrivateKey, origin string
 func (rec *TrustedKeyRecord) sign(priK rsa.PrivateKey, origin string) TrustedKeyRecord {
 	if rec.keyExchangeMessage == nil {
 
-		keybytes, _ := SerializeKey(rec.Record.KeyPub)
+		keybytes, _ := SerializeKey(rec.KeyRecord.KeyPub)
 
-		msg := create(keybytes, rec.Record.Owner, priK, origin)
+		msg := create(keybytes, rec.KeyRecord.Owner, priK, origin)
 
 		rec.keyExchangeMessage = &msg
 	}

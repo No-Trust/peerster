@@ -95,7 +95,7 @@ func getPublicKeysFromDirectory(dir string, except string) []awot.TrustedKeyReco
 					}
 
 					trec := awot.TrustedKeyRecord{
-						Record:     record,
+						KeyRecord:  record,
 						Confidence: float32(1.0),
 					}
 

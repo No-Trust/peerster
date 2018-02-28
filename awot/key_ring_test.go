@@ -208,7 +208,7 @@ func TestKeyRing(t *testing.T) {
 		}
 
 		rec := TrustedKeyRecord{
-			Record: KeyRecord{
+			KeyRecord: KeyRecord{
 				Owner:  string(c),
 				KeyPub: key.PublicKey,
 			},

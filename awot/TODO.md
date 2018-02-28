@@ -23,6 +23,3 @@ Any new idea is welcomed.
 - Add bash tests to go tests for key_ring.go
 
 ## Named possible improvements
-- key_record.go TrustedKeyRecord : use struct embedding over composition for the KeyRecord.
-- key_ring.go KeyRing : use struct embedding over composition for the KeyTable.
-- key_ring.go : split KeyRing implementation and visualization.

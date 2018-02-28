@@ -48,7 +48,7 @@ func TestKeyExchangeSigning(t *testing.T) {
 	}
 
 	trustedRecordForB := TrustedKeyRecord{
-		Record:     recordForB,
+		KeyRecord:  recordForB,
 		Confidence: 1.0,
 	}
 
