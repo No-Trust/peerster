@@ -7,6 +7,7 @@ import (
 )
 
 // A KeyExchangeMessage is a signed relation (publickey - owner)
+// This should be used to share a known and relatively trusted public key to other peers
 type KeyExchangeMessage struct {
 	KeyBytes  []byte // serialized public key
 	Owner     string // owner of the public key

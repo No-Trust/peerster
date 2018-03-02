@@ -3,10 +3,8 @@
 Any new idea is welcomed.
 
 ## Main Features
-- implement a threshold T for key confidence levels  
-  If confidence < T, awot should report to the user no key, as if the key was absent, while keeping it stored in the key ring.  
-  For now, it is the user that has to decide to use the key or not according to its confidence values.
-
+- RSA PSS check the use of the salt
+- Stop KeyRing
 
 ## Visualization
 - Add color for edges function of the public key (if different public keys to the same peer, different colors)

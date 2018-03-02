@@ -56,6 +56,7 @@ type KeyRing struct {
 	pendingMutex *sync.Mutex          // mutex for pending KeyExchangeMessage
 	mutex        *sync.Mutex          // mutex for the keyring itself
 	threshold    float32              // confidence threshold for trusted keys
+	stopped      bool                 // indicator for the state of the ring
 }
 
 ////////// Key Ring API
@@ -143,6 +144,7 @@ func NewKeyRing(owner string, key rsa.PublicKey, trustedRecords []TrustedKeyReco
 		pendingMutex: &sync.Mutex{},
 		mutex:        &sync.Mutex{},
 		threshold:    threshold,
+		stopped:      false,
 	}
 	// return
 	return ring
@@ -158,6 +160,14 @@ func (ring *KeyRing) Start(rate time.Duration) {
 // It spawns a goroutine that will update the keyring regularly, at given rate
 func (ring *KeyRing) StartWithReputation(rate time.Duration, reptable ReputationTable) {
 	go ring.worker(rate, reptable)
+}
+
+// Stop stops the KeyRing.
+// It will keep the state of the ring, but any later add will not update the confidence levels.
+func (ring *KeyRing) Stop() {
+	ring.stopped = true
+
+	// TODO wait for the thread to stop
 }
 
 // GetKey returns the key of peer with given name and true if it exists, otherwise returns false.
@@ -243,6 +253,9 @@ func (ring *KeyRing) worker(rate time.Duration, reptable ReputationTable) {
 		ticker := time.NewTicker(rate) // every 5 sec
 		defer ticker.Stop()
 		for range ticker.C {
+			if ring.stopped {
+				break
+			}
 			ring.updateTrust(reptable)
 			ring.updatePending(reptable)
 			ring.updateConfidence()

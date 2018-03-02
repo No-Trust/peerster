@@ -25,7 +25,6 @@ type TrustedKeyRecord struct {
 // ConstructMessage constructs a KeyExchangeMessage from a TrustedKeyRecord and signs it if needed with given private key and origin name
 func (rec *TrustedKeyRecord) ConstructMessage(priK rsa.PrivateKey, origin string) KeyExchangeMessage {
 
-	// sign
 	rec.sign(priK, origin)
 
 	msg := rec.keyExchangeMessage
