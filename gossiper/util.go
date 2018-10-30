@@ -6,13 +6,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/No-Trust/peerster/common"
-	"github.com/dedis/protobuf"
 	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/No-Trust/peerster/common"
+	"github.com/dedis/protobuf"
 )
 
 func flipCoin() bool {

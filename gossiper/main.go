@@ -34,7 +34,7 @@ func main() {
 	reptimer := flag.Uint("reptimer", rep.DEFAULT_REP_REQ_TIMER,
 		"timer duration for reputation update requests")
 	noforward := flag.Bool("noforward", false, "for testing : forwarding of route rumors only")
-	nat_traversal := flag.Bool("traversal", false, "nat travarsal option")
+	natTraversal := flag.Bool("traversal", false, "nat travarsal option")
 	keysdir := flag.String("keys", ".", "directory for boostrap public keys")
 	confidenceThreshold := flag.Float64("cthresh", 0.20, "confidence threshold for collected public keys")
 
@@ -98,7 +98,7 @@ func main() {
 		Reptimer:               *reptimer,
 		Hoplimit:               HOP_LIMIT,
 		NoForward:              *noforward,
-		NatTraversal:           *nat_traversal,
+		NatTraversal:           *natTraversal,
 		GossipAddr:             *gossipAddr,
 		GossipConn:             *gossipConn,
 		UIAddr:                 *UIAddr,
