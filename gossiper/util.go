@@ -102,6 +102,7 @@ func writeToDisk(data []byte, directory, filename string) {
 	common.CheckError(err)
 	defer f.Close()
 	_, err = f.Write(data)
+	common.CheckRead(err)
 	f.Sync()
 }
 
