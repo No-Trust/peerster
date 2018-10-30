@@ -114,7 +114,7 @@ func main() {
 		KeyConfidenceThreshold: float32(*confidenceThreshold),
 	}
 
-	var g *Gossiper = NewGossiper(parameters, peerAddrs)
+	var g = NewGossiper(parameters, peerAddrs)
 
 	// start peerster
 	g.Start()
@@ -129,11 +129,11 @@ func parsePeers(args []string) []net.UDPAddr {
 		common.CheckRead(err)
 		port, err := strconv.Atoi(portS)
 		common.CheckRead(err)
-		var ip net.IP = net.ParseIP(ipS)
+		var ip = net.ParseIP(ipS)
 		if ip == nil {
 			common.CheckRead(errors.New("ip address must be correct"))
 		}
-		var newPeer net.UDPAddr = net.UDPAddr{IP: ip, Port: port, Zone: ""}
+		var newPeer = net.UDPAddr{IP: ip, Port: port, Zone: ""}
 		peers = append(peers, newPeer)
 	}
 	return peers

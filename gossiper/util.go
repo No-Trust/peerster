@@ -28,11 +28,11 @@ func stringToUDPAddr(ipport string) net.UDPAddr {
 	common.CheckRead(err)
 	port, err := strconv.Atoi(portS)
 	common.CheckRead(err)
-	var ip net.IP = net.ParseIP(ipS)
+	var ip = net.ParseIP(ipS)
 	if ip == nil {
 		common.CheckRead(errors.New("ip address must be correct"))
 	}
-	var addr net.UDPAddr = net.UDPAddr{
+	var addr = net.UDPAddr{
 		IP:   ip,
 		Port: port,
 		Zone: "",
