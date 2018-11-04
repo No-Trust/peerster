@@ -138,7 +138,7 @@ func TestKeyTable(t *testing.T) {
 	// updating confidence of node2 while updating the key
 	table.updateConfidence("node1", 0.88, &r2K.PublicKey)
 
-	retrieved, present = table.get("node1")
+	retrieved, _ = table.get("node1")
 	key, present := table.getKey("node1")
 
 	if !present {

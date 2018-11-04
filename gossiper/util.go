@@ -6,13 +6,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/No-Trust/peerster/common"
-	"github.com/dedis/protobuf"
 	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/No-Trust/peerster/common"
+	"github.com/dedis/protobuf"
 )
 
 func flipCoin() bool {
@@ -28,11 +29,11 @@ func stringToUDPAddr(ipport string) net.UDPAddr {
 	common.CheckRead(err)
 	port, err := strconv.Atoi(portS)
 	common.CheckRead(err)
-	var ip net.IP = net.ParseIP(ipS)
+	var ip = net.ParseIP(ipS)
 	if ip == nil {
 		common.CheckRead(errors.New("ip address must be correct"))
 	}
-	var addr net.UDPAddr = net.UDPAddr{
+	var addr = net.UDPAddr{
 		IP:   ip,
 		Port: port,
 		Zone: "",
@@ -102,6 +103,7 @@ func writeToDisk(data []byte, directory, filename string) {
 	common.CheckError(err)
 	defer f.Close()
 	_, err = f.Write(data)
+	common.CheckRead(err)
 	f.Sync()
 }
 

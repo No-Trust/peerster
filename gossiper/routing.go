@@ -2,10 +2,11 @@
 package main
 
 import (
-	"github.com/No-Trust/peerster/common"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/No-Trust/peerster/common"
 )
 
 type RoutingTable struct {
